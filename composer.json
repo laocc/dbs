@@ -1,0 +1,33 @@
+{
+      "name": "laocc/dbs",
+      "description": "for mysql,mongodb,memcache,memcached,redis,yac,apcu",
+      "version": "1.0.0",
+      "require": {
+            "php": ">=5.5.0"
+      },
+      "authors": [
+            {
+                  "name": "LaoCC",
+                  "email": "fazo@qq.com"
+            }
+      ],
+      "keywords": [
+            "mysql",
+            "mongodb",
+            "memcache",
+            "memcached",
+            "apcu",
+            "redis",
+            "yac"
+      ],
+      "support": {
+            "source": "https://github.com/laocc/dbs"
+      },
+      "autoload": {
+            "psr-4": {
+                  "laocc\\db\\": "kernel/"
+            }
+      },
+      "type": "library",
+      "license": "LGPL"
+}
