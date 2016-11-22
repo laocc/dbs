@@ -16,12 +16,22 @@ class TestController
 
     public function mysql()
     {
+        if(!class_exists('pdo')){
+            echo '<h5>pdo扩展没关安装或没有加载，本程序操作mysql基于PDO</h5>';
+            return;
+        }
+
         $mysql = new \MysqlModel($this->config['mysql']);
         var_dump($mysql);
     }
 
     public function mongodb()
     {
+        if(!class_exists('mongodb')){
+            echo '<h5>mongodb扩展没关安装或没有加载</h5>';
+            return;
+        }
+
         $mongo = new \MongodbModel($this->config['mongodb'], 'demo');
         $val = print_r([
             'star' => $mongo->read(2),
@@ -33,6 +43,11 @@ class TestController
 
     public function redis()
     {
+        if(!class_exists('redis')){
+            echo '<h5>redis扩展没关安装或没有加载</h5>';
+            return;
+        }
+
         $redis = new \RedisModel($this->config['redis']);
         $val = print_r([
             'star' => $redis->read('tmp'),
@@ -45,6 +60,11 @@ class TestController
 
     public function memcached()
     {
+        if(!class_exists('memcached')){
+            echo '<h5>memcached扩展没关安装或没有加载</h5>';
+            return;
+        }
+
         $med = new \MemcachedModel($this->config['memcached']);
         $val = print_r([
             'star' => $med->read('tmp'),
@@ -57,6 +77,11 @@ class TestController
 
     public function memcache()
     {
+        if(!class_exists('memcache')){
+            echo '<h5>memcache扩展没关安装或没有加载</h5>';
+            return;
+        }
+
         $me = new \MemcacheModel($this->config['memcache']);
         $val = print_r([
             'star' => $me->read('tmp'),
@@ -68,6 +93,10 @@ class TestController
 
     public function yac()
     {
+        if(!class_exists('yac')){
+            echo '<h5>Yac扩展没关安装或没有加载</h5>';
+            return;
+        }
         $yac = new \YacModel('Test');
         $yac->save('tmp1', mt_rand(), 10);
         $yac->save('tmp2', mt_rand(), 10);
@@ -84,6 +113,11 @@ class TestController
 
     public function apcu()
     {
+        if(!class_exists('apcu')){
+            echo '<h5>apcu扩展没关安装或没有加载</h5>';
+            return;
+        }
+
         $apc = new \ApcuModel('Test');
         $val = print_r([
             'star' => $apc->read('tmp'),
