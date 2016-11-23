@@ -1,5 +1,5 @@
 <?php
-namespace laocc\db;
+namespace laocc\dbs;
 
 use \MongoDB\Driver\Manager;
 use \MongoDB\Driver\BulkWrite;

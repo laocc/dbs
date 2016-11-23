@@ -1,5 +1,5 @@
 <?php
-use \laocc\db\Apcu;
+use \laocc\dbs\Apcu;
 
 class ApcuModel
 {

@@ -15,6 +15,7 @@ echo <<<HTML
         ul{clear:both;display:block;width:100%;height:50px;}
         li{float:left;margin:10px;}
     </style>
+    <title>LaoCC DBS 测试</title>
     <ul>
         <li><a href="?action=test">测试读写</a></li>
         <li><a href="?action=speed">Mary速度对比</a></li>
@@ -36,18 +37,20 @@ switch ($action) {
         break;
 
     case 'speed':
-        $obj = new \demo\SpeedController($config, 'set', 10000);
+        echo "<pre>";
+        $obj = new \demo\SpeedController($config, 'set', 1000);
         //$obj->memcache();
         $obj->memcached();
         $obj->apcu();
         $obj->redis();
         $obj->yac();
-        $obj = new \demo\SpeedController($config, 'get', 10000);
+        $obj = new \demo\SpeedController($config, 'get', 1000);
         //$obj->memcache();
         $obj->memcached();
         $obj->apcu();
         $obj->redis();
         $obj->yac();
+        echo "</pre>";
         break;
     default:
 

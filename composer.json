@@ -25,7 +25,7 @@
       },
       "autoload": {
             "psr-4": {
-                  "laocc\\db\\": "kernel/"
+                  "laocc\\dbs\\": "kernel/"
             }
       },
       "type": "library",

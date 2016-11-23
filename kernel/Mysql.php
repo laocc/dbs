@@ -1,8 +1,8 @@
 <?php
-namespace laocc\db;
+namespace laocc\dbs;
 
-use laocc\db\ext\Builder;
-use laocc\db\ext\Result;
+use laocc\dbs\ext\Builder;
+use laocc\dbs\ext\Result;
 
 class Mysql
 {

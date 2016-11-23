@@ -1,11 +1,11 @@
 <?php
 namespace demo;
 
-use laocc\db\Apcu;
-use laocc\db\Memcache;
-use laocc\db\Memcached;
-use laocc\db\Redis;
-use laocc\db\Yac;
+use laocc\dbs\Apcu;
+use laocc\dbs\Memcache;
+use laocc\dbs\Memcached;
+use laocc\dbs\Redis;
+use laocc\dbs\Yac;
 
 /**
  * Mary 连续 set 10000次耗时：
@@ -29,6 +29,7 @@ class SpeedController
 {
     private $number;
     private $config;
+    private $ttl = 1;
 
     public function __construct($config, $action, $number)
     {
@@ -46,9 +47,9 @@ class SpeedController
         $obj->table('speed');
         for ($i = 1; $i <= $this->number; $i++) {
             if ($this->action === 'set') {
-                $obj->set("tmp.{$i}", time());
+                $obj->set("speed.{$i}", 1, $this->ttl);
             } else {
-                $obj->get("tmp.{$i}");
+                $obj->get("speed.{$i}");
             }
         }
         $b = microtime(true) - $a;
@@ -62,9 +63,9 @@ class SpeedController
         $obj->table('speed');
         for ($i = 1; $i <= $this->number; $i++) {
             if ($this->action === 'set') {
-                $obj->set("tmp.{$i}", time());
+                $obj->set("speed.{$i}", 1, $this->ttl);
             } else {
-                $obj->get("tmp.{$i}");
+                $obj->get("speed.{$i}");
             }
         }
         $b = microtime(true) - $a;
@@ -78,9 +79,9 @@ class SpeedController
         $obj->table('speed');
         for ($i = 1; $i <= $this->number; $i++) {
             if ($this->action === 'set') {
-                $obj->set("tmp.{$i}", time());
+                $obj->set("speed.{$i}", 1, $this->ttl);
             } else {
-                $obj->get("tmp.{$i}");
+                $obj->get("speed.{$i}");
             }
         }
         $b = microtime(true) - $a;
@@ -94,9 +95,9 @@ class SpeedController
         $obj->table('speed');
         for ($i = 1; $i <= $this->number; $i++) {
             if ($this->action === 'set') {
-                $obj->set("tmp.{$i}", time());
+                $obj->set("speed.{$i}", 1, $this->ttl);
             } else {
-                $obj->get("tmp.{$i}");
+                $obj->get("speed.{$i}");
             }
         }
         $b = microtime(true) - $a;
@@ -110,9 +111,9 @@ class SpeedController
         $obj->table('speed');
         for ($i = 1; $i <= $this->number; $i++) {
             if ($this->action === 'set') {
-                $obj->set("tmp.{$i}", time());
+                $obj->set("speed.{$i}", 1, $this->ttl);
             } else {
-                $obj->get("tmp.{$i}");
+                $obj->get("speed.{$i}");
             }
         }
         $b = microtime(true) - $a;

@@ -1,5 +1,5 @@
 <?php
-use laocc\db\Redis;
+use laocc\dbs\Redis;
 
 class RedisModel
 {

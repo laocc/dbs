@@ -34,7 +34,7 @@ class Yac
     /**
      * @return array
      */
-    public function dump()
+    public function dump($limit = 100)
     {
         return [];
     }

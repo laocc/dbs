@@ -1,5 +1,5 @@
 <?php
-namespace laocc\db\ext;
+namespace laocc\dbs\ext;
 
 final class Result
 {

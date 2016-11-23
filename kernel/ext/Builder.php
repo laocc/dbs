@@ -1,7 +1,7 @@
 <?php
-namespace laocc\db\ext;
+namespace laocc\dbs\ext;
 
-use laocc\db\Mysql;
+use laocc\dbs\Mysql;
 
 /**
  *

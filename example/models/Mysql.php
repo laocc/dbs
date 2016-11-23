@@ -1,5 +1,5 @@
 <?php
-use \laocc\db\Mysql;
+use \laocc\dbs\Mysql;
 
 class MysqlModel
 {

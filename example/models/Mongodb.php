@@ -1,5 +1,5 @@
 <?php
-use \laocc\db\Mongodb;
+use \laocc\dbs\Mongodb;
 
 class MongodbModel
 {

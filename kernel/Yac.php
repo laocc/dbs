@@ -1,5 +1,5 @@
 <?php
-namespace laocc\db;
+namespace laocc\dbs;
 
 class Yac
 {
@@ -29,12 +29,17 @@ class Yac
      */
     public function keys()
     {
-        $dump = $this->conn->dump();
+        $dump = $this->conn->dump(100000);
         $keys = array_column($dump, 'key');
-        foreach ($keys as &$key) {
+        $ttls = array_column($dump, 'ttl');
+        $time = time();
+        foreach ($keys as $index => &$key) {
             $i = strpos($key, '_');
-            if ($i === false) continue;
-            $key = substr($key, $i + 1);
+            if ($i > 0) $key = substr($key, $i + 1);
+            if ($ttls[$index] > 0 and $ttls[$index] < $time) {
+                unset($keys[$index]);
+            }
+            $key .= '-' . $ttls[$index];
         }
         return $keys;
     }

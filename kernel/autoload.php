@@ -26,7 +26,7 @@ function LaoCC_databases_register($class)
     $root = dirname(__DIR__);
 
     $namespace = [
-        'laocc\\db\\' => "{$root}/kernel/",
+        'laocc\\dbs\\' => "{$root}/kernel/",
         'demo\\' => "{$root}/example/",
     ];
 

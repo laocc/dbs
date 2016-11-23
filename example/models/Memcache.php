@@ -1,5 +1,5 @@
 <?php
-use \laocc\db\Memcache;
+use \laocc\dbs\Memcache;
 
 class MemcacheModel
 {

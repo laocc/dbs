@@ -11,12 +11,12 @@ class TestController
     {
         $this->config = $config;
         $this->temp = date('Y-m-d H:i:s');
-        $this->ttl = 10;
+        $this->ttl = 5;
     }
 
     public function mysql()
     {
-        if(!class_exists('pdo')){
+        if (!class_exists('pdo')) {
             echo '<h5>pdo扩展没关安装或没有加载，本程序操作mysql基于PDO</h5>';
             return;
         }
@@ -27,7 +27,7 @@ class TestController
 
     public function mongodb()
     {
-        if(!class_exists('mongodb')){
+        if (!class_exists('mongodb')) {
             echo '<h5>mongodb扩展没关安装或没有加载</h5>';
             return;
         }
@@ -43,7 +43,7 @@ class TestController
 
     public function redis()
     {
-        if(!class_exists('redis')){
+        if (!class_exists('redis')) {
             echo '<h5>redis扩展没关安装或没有加载</h5>';
             return;
         }
@@ -60,7 +60,7 @@ class TestController
 
     public function memcached()
     {
-        if(!class_exists('memcached')){
+        if (!class_exists('memcached')) {
             echo '<h5>memcached扩展没关安装或没有加载</h5>';
             return;
         }
@@ -77,7 +77,7 @@ class TestController
 
     public function memcache()
     {
-        if(!class_exists('memcache')){
+        if (!class_exists('memcache')) {
             echo '<h5>memcache扩展没关安装或没有加载</h5>';
             return;
         }
@@ -93,13 +93,18 @@ class TestController
 
     public function yac()
     {
-        if(!class_exists('yac')){
+        if (!class_exists('yac')) {
             echo '<h5>Yac扩展没关安装或没有加载</h5>';
             return;
         }
         $yac = new \YacModel('Test');
-        $yac->save('tmp1', mt_rand(), 10);
-        $yac->save('tmp2', mt_rand(), 10);
+        for ($i = 1; $i <= 3; $i++)
+            $yac->save("tmp.{$i}", mt_rand(), $this->ttl);
+
+        $yac->kill("tmp.2");
+        $yac->save("tmp.4", mt_rand());
+        $yac->save("tmp.5", mt_rand(), 0);
+        $yac->save("tmp.6", mt_rand(), $this->ttl);
 
         $val = print_r([
             'star' => $yac->read('tmp'),
@@ -113,7 +118,7 @@ class TestController
 
     public function apcu()
     {
-        if(!class_exists('apcu')){
+        if (!class_exists('apcu')) {
             echo '<h5>apcu扩展没关安装或没有加载</h5>';
             return;
         }
