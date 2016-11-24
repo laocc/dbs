@@ -99,7 +99,7 @@ class Apcu
      * @param null $success 操作成功标识
      * @return bool|int|mixed
      */
-    public function add($key, $step = 1, &$success = null)
+    public function counter($key, $step = 1, &$success = null)
     {
         if ($step >= 0) {
             return apcu_inc("{$this->table}_{$key}", $step, $success);

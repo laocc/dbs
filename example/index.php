@@ -29,23 +29,23 @@ switch ($action) {
         $cont = new \demo\TestController($config);
         //$cont->mysql();
         $cont->yac();
-        $cont->memcache();
-        $cont->memcached();
         $cont->redis();
         $cont->mongodb();
         $cont->apcu();
+        $cont->memcached();
+        $cont->memcache();
         break;
 
     case 'speed':
         echo "<pre>";
-        $obj = new \demo\SpeedController($config, 'set', 1000);
-        //$obj->memcache();
+        $obj = new \demo\SpeedController($config, 'set', 10000);
+        $obj->memcache();
         $obj->memcached();
         $obj->apcu();
         $obj->redis();
         $obj->yac();
-        $obj = new \demo\SpeedController($config, 'get', 1000);
-        //$obj->memcache();
+        $obj = new \demo\SpeedController($config, 'get', 10000);
+        $obj->memcache();
         $obj->memcached();
         $obj->apcu();
         $obj->redis();

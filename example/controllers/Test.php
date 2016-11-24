@@ -27,7 +27,7 @@ class TestController
 
     public function mongodb()
     {
-        if (!class_exists('mongodb')) {
+        if (!class_exists('\MongoDB\Driver\Manager')) {
             echo '<h5>mongodb扩展没关安装或没有加载</h5>';
             return;
         }
@@ -60,7 +60,7 @@ class TestController
 
     public function memcached()
     {
-        if (!class_exists('memcached')) {
+        if (!class_exists('Memcached')) {
             echo '<h5>memcached扩展没关安装或没有加载</h5>';
             return;
         }
@@ -118,12 +118,14 @@ class TestController
 
     public function apcu()
     {
-        if (!class_exists('apcu')) {
+        if (!function_exists('apcu_fetch')) {
             echo '<h5>apcu扩展没关安装或没有加载</h5>';
             return;
         }
 
         $apc = new \ApcuModel('Test');
+        $apc->save('tmp_1', $this->temp, $this->ttl);
+        $apc->save('tmp_2', $this->temp, $this->ttl);
         $val = print_r([
             'star' => $apc->read('tmp'),
             'save' => $apc->save('tmp', $this->temp, $this->ttl),

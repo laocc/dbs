@@ -99,7 +99,7 @@ class Yac
      * @param int $incrby 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function add($key = 'count', $incrby = 1)
+    public function counter($key = 'count', $incrby = 1)
     {
         $val = $this->conn->get($key);
         if ($incrby === 0) return intval($val);

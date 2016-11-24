@@ -17,9 +17,9 @@ class ApcuModel
     }
 
 
-    public function add($key, $num)
+    public function counter($key, $num)
     {
-        return $this->conn->add($key, $num);
+        return $this->conn->counter($key, $num);
     }
 
 

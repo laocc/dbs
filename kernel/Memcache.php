@@ -12,7 +12,7 @@ class Memcache
     {
         $conf += ['host' => '127.0.0.1', 'port' => 11211, 'table' => $this->table];
         $this->conn = new \Memcache();
-        if (!$this->conn->connect($conf['host'], $conf['port'])) {
+        if (!@$this->conn->connect($conf['host'], $conf['port'])) {
             throw new \Exception('Memcache 连接失败');
         }
         $this->table = ($table ?: $conf['table']) ?: $this->table;
@@ -195,7 +195,7 @@ class Memcache
      * @param int $incrby 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function add($TabKey = 'count', $incrby = 1)
+    public function counter($TabKey = 'count', $incrby = 1)
     {
         if (!is_int($incrby)) throw new \Exception('DB_MemCache ERROR: incrby只能是整型');
 
@@ -213,7 +213,7 @@ class Memcache
      */
     public function len($TabKey = 'count')
     {
-        return $this->add($this->table . '.' . $TabKey, 0);
+        return $this->counter($this->table . '.' . $TabKey, 0);
     }
 
     /**

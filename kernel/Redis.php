@@ -351,7 +351,7 @@ final class Redis
      * @param int $inc
      * @return bool|int
      */
-    public function add($key = 'count', $inc = 1)
+    public function counter($key = 'count', $inc = 1)
     {
         if (is_float($inc)) {
             if ($this->table) {

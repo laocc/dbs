@@ -10,17 +10,20 @@ use laocc\dbs\Yac;
 /**
  * Mary 连续 set 10000次耗时：
  * ===========================
- * Memcached:    0.046806812286377
- * Apcu:         0.014969825744629
- * Redis:        0.39833498001099
- * Yac:          0.01001501083374
+ * Memcache:     0.774010181427
+ * Memcached:    0.67804718017578
+ * Apcu:         0.011286020278931
+ * Redis:        0.41659498214722
+ * Yac:          0.0076091289520264
  *
  * Mary 连续 get 10000次耗时：
  * ===========================
- * Memcached:    0.025343894958496
- * Apcu:         0.010867118835449
- * Redis:        0.38857293128967
- * Yac:          0.0080459117889404
+ * Memcache:     0.62700915336609
+ * Memcached:    0.65111303329468
+ * Apcu:         0.0080101490020752
+ * Redis:        0.40621709823608
+ * Yac:          0.0068061351776123
+ *
  *
  * Class SpeedController
  * @package demo
@@ -64,6 +67,7 @@ class SpeedController
         for ($i = 1; $i <= $this->number; $i++) {
             if ($this->action === 'set') {
                 $obj->set("speed.{$i}", 1, $this->ttl);
+//                $obj->set("speed.{$i}", 1);
             } else {
                 $obj->get("speed.{$i}");
             }
