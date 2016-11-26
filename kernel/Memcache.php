@@ -1,7 +1,9 @@
 <?php
 namespace laocc\dbs;
 
-class Memcache
+use laocc\dbs\ext\KeyValue;
+
+class Memcache implements KeyValue
 {
     private $conn;
     private $table = 'Temp';

@@ -2,7 +2,9 @@
 namespace laocc\dbs;
 
 
-class Apcu
+use laocc\dbs\ext\KeyValue;
+
+class Apcu implements KeyValue
 {
     const _TTL = 0;
     private $table;
@@ -99,7 +101,7 @@ class Apcu
      * @param null $success 操作成功标识
      * @return bool|int|mixed
      */
-    public function counter($key, $step = 1, &$success = null)
+    public function counter($key = 'count', $step = 1, &$success = null)
     {
         if ($step >= 0) {
             return apcu_inc("{$this->table}_{$key}", $step, $success);
@@ -134,7 +136,7 @@ class Apcu
      */
     public function flush()
     {
-       return apcu_clear_cache();
+        return apcu_clear_cache();
     }
 
     /**
@@ -148,4 +150,19 @@ class Apcu
     }
 
 
+    /**
+     *  关闭
+     */
+    public function close()
+    {
+        return true;
+    }
+
+    /**
+     * @return bool
+     */
+    public function ping()
+    {
+        return true;
+    }
 }

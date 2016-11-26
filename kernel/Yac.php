@@ -1,14 +1,17 @@
 <?php
 namespace laocc\dbs;
 
-class Yac
+use laocc\dbs\ext\KeyValue;
+
+class Yac implements KeyValue
 {
     const _TTL = 0;
     private $conn;
 
-    public function __construct($table = 'temp')
+    public function __construct($table = null)
     {
-        $this->conn = new \Yac($table . '_');
+        if ($table)
+            $this->conn = new \Yac($table . '_');
     }
 
     /**

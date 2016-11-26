@@ -1,12 +1,13 @@
 <?php
 namespace laocc\dbs;
+use laocc\dbs\ext\KeyValue;
 
 /**
  * Class Redis
  * @package db
  * http://doc.redisfans.com/
  */
-final class Redis
+final class Redis implements KeyValue
 {
     private $redis;
     private $table = null;//哈希表
@@ -165,6 +166,10 @@ final class Redis
         return $value;
     }
 
+    public function flush()
+    {
+        return $this->redis->flushDB();
+    }
 
 
 

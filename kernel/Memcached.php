@@ -1,5 +1,6 @@
 <?php
 namespace laocc\dbs;
+use laocc\dbs\ext\KeyValue;
 
 /**
  * Class Memcache
@@ -8,11 +9,11 @@ namespace laocc\dbs;
  * http://pecl.php.net/package/memcached
  * 函数表在PHP手册中可找到
  */
-class Memcached
+class Memcached implements KeyValue
 {
     private $server;
 
-    public function __construct($conf)
+    public function __construct(array $conf = [])
     {
         $conf += ['id' => 'test', 'table' => 'test', 'host' => [['127.0.0.1', 11211]], 'option' => null];
         $options = is_array($conf['option']) ? $conf['option'] : [];
