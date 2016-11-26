@@ -1,7 +1,6 @@
 {
       "name": "laocc/dbs",
       "description": "for mysql,mongodb,memcache,memcached,redis,yac,apcu",
-      "version": "1.0.0",
       "require": {
             "php": ">=5.5.0"
       },
