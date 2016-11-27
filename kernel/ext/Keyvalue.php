@@ -61,7 +61,7 @@ interface KeyValue
      * @param int $incrby 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter($key = 'count', $incrby = 1);;
+    public function counter($key = 'count', $incrby = 1);
 
     /**
      *  关闭
