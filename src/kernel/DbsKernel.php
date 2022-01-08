@@ -1,10 +1,10 @@
 <?php
-declare(strict_types=1);
 
-namespace esp\dbs;
+namespace esp\dbs\kernel;
 
-use esp\core\Library;
+
 use esp\dbs\mysql\Mysql;
+use esp\dbs\redis\Redis;
 
 
 /**
@@ -27,7 +27,7 @@ use esp\dbs\mysql\Mysql;
  * Class ModelPdo
  * @package esp\core
  */
-abstract class Model extends Library
+trait DbsKernel
 {
 
     /**
@@ -57,7 +57,11 @@ abstract class Model extends Library
         return $this->Pool()->mysql($table);
     }
 
-    public function Redis(int $db = 0)
+    /**
+     * @param int $db
+     * @return Redis
+     */
+    public function Redis(int $db = 0): Redis
     {
         return $this->Pool()->redis($db);
     }
@@ -97,14 +101,6 @@ abstract class Model extends Library
     public function __call($name, $arguments)
     {
         return $this->Mysql()->{$name}(...$arguments);
-    }
-
-    private function Pool(): Pool
-    {
-        if (is_null($this->_controller->_pool)) {
-            $this->_controller->_pool = new Pool($this->_controller->_config);
-        }
-        return $this->_controller->_pool;
     }
 
 

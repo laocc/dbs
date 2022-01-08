@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\dbs\yac;
 
-use esp\dbs\KeyValue;
+use esp\dbs\kernel\KeyValue;
 
 class Yac implements KeyValue
 {

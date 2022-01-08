@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\yac;
 
 use Error;
-use esp\dbs\KeyValue;
+use esp\dbs\kernel\KeyValue;
 
 /**
  * 简单文件存储缓存

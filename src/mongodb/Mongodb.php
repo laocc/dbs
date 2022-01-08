@@ -47,14 +47,8 @@ class Mongodb
     ];
 
 
-    /**
-     * @param Pool $pool
-     * @param null $db
-     */
-    public function __construct(Pool $pool, $db = null)
+    public function __construct(Pool $pool, array $conf, $db = null)
     {
-        $conf = $pool->config->get('database.mysql');
-
         $conf += [
             'host' => '127.0.0.1',
             'port' => 27017,

@@ -13,41 +13,9 @@ if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 
  */
 final class Mysql
 {
-    private $table;
     private $pool;
     private $config;
     private $cacheHashKey;
-
-    public function __construct(Pool $pool, string $table = null)
-    {
-        $this->table = $table;
-        $this->pool = $pool;
-        $this->config = $pool->config->get('database.mysql');
-
-        if (boolval($this->conig['cache'] ?? 0)) {
-            if (is_string($this->config['cache'])) {
-                $this->cacheHashKey = $this->config['cache'];
-            } else {
-                $this->cacheHashKey = $this->config['db'];
-            }
-        }
-    }
-
-
-    /**
-     * 创建一个Mysql实例
-     * @param int $tranID
-     * @param int $traceLevel
-     * @return PdoContent
-     */
-    final private function MysqlObj(int $tranID = 0, int $traceLevel = 0): PdoContent
-    {
-        if ($tranID === 1) $tranID = $this->_tranIndex++;
-
-        if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
-
-        return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config);
-    }
 
     private $_MysqlPool = array();
 
@@ -83,6 +51,38 @@ final class Mysql
      */
     public $paging;
 
+
+
+    public function __construct(Pool $pool, array $conf, string $table = null)
+    {
+        $this->_table = $table;
+        $this->pool = $pool;
+        $this->config = $conf;
+
+        if (boolval($this->conig['cache'] ?? 0)) {
+            if (is_string($this->config['cache'])) {
+                $this->cacheHashKey = $this->config['cache'];
+            } else {
+                $this->cacheHashKey = $this->config['db'];
+            }
+        }
+    }
+
+
+    /**
+     * 创建一个Mysql实例
+     * @param int $tranID
+     * @param int $traceLevel
+     * @return PdoContent
+     */
+    final private function MysqlObj(int $tranID = 0, int $traceLevel = 0): PdoContent
+    {
+        if ($tranID === 1) $tranID = $this->_tranIndex++;
+
+        if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
+
+        return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config);
+    }
 
     /**
      * 清除自身的一些对象变量

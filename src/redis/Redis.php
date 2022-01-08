@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace esp\dbs\redis;
 
-use esp\dbs\KeyValue;
-use esp\dbs\Pool;
+use esp\dbs\kernel\KeyValue;
 use Error;
 
 /**
@@ -24,14 +23,11 @@ final class Redis implements KeyValue
     private $dbIndex = 0;
 
     /**
-     * @param Pool $pool
+     * @param array $conf
      * @param int|null $db
-     * @throws Error
      */
-    public function __construct(Pool $pool, int $db = null)
+    public function __construct(array $conf, int $db = null)
     {
-        $conf = $pool->config->get('database.redis');
-
         $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
 
         if (is_null($db)) $db = intval($conf['db'] ?? 1);

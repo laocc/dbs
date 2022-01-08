@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\memcache;
 
 use Error;
-use esp\dbs\KeyValue;
+use esp\dbs\kernel\KeyValue;
 
 /**
  * Class Memcache

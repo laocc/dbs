@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\dbs;
+namespace esp\dbs\kernel;
 
 interface KeyValue
 {
