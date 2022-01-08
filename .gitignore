@@ -1,4 +1,8 @@
 *.db
+*.sh
+*.log
 /.idea/
-vendor
-composer.lock
+/runtime
+/vendor
+/composer.lock
+/public/vui
