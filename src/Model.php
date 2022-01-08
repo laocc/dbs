@@ -18,6 +18,7 @@ use esp\dbs\mysql\Mysql;
  *
  * @method Array get(...$params) 读取一条记录
  * @method Array all(...$params) 读取多条记录
+ * @method Array list(...$params) 读取多条记录，分页
  *
  * @method Mysql paging(...$params) 设置分页
  * @method Mysql select(...$params) 选择字段
@@ -28,13 +29,47 @@ use esp\dbs\mysql\Mysql;
  */
 abstract class Model extends Library
 {
-    public $_table = null;  //Model对应表名
-    public $_id = null;      //表主键
 
     /**
-     * @var $_mysqlBridge Mysql
+     * @var $_mysqlOBJ Mysql
      */
-    private $_mysqlBridge;
+    private $_mysqlOBJ;
+
+
+    /**
+     * @param string|null $table
+     * @return Mysql
+     */
+    public function Mysql(string $table = null): Mysql
+    {
+        return $this->table($table);
+    }
+
+    public function Redis()
+    {
+
+    }
+
+    public function Hash()
+    {
+
+    }
+
+    public function Mongodb()
+    {
+
+    }
+
+    public function Sqlite()
+    {
+
+    }
+
+    public function Yac()
+    {
+
+    }
+
 
     /**
      * 指定当前模型的表
@@ -42,7 +77,7 @@ abstract class Model extends Library
      * @param string|null $table
      * @return Mysql
      */
-    final public function table(string $table = null)
+    final public function table(string $table = null): Mysql
     {
         if (is_null($table)) {
             if (isset($this->_table)) $table = $this->_table;
@@ -53,18 +88,20 @@ abstract class Model extends Library
             }
         }
 
-        if (is_null($this->_mysqlBridge)) {
-            $this->_mysqlBridge = new Mysql($table, $this->_controller->_pool);
+        if (is_null($this->_mysqlOBJ)) {
+            $this->_mysqlOBJ = new Mysql($table, $this->_controller->_pool);
 
         } else {
-            $this->_mysqlBridge->table($table);
+            $this->_mysqlOBJ->table($table);
         }
 
-        return $this->_mysqlBridge;
+        return $this->_mysqlOBJ;
     }
 
 
     /**
+     * 针对Mysql
+     *
      * @param $name
      * @param $arguments
      * @return mixed
@@ -73,15 +110,4 @@ abstract class Model extends Library
     {
         return $this->table()->{$name}(...$arguments);
     }
-
-    /**
-     * @param string|null $table
-     * @return Mysql
-     */
-    public function mysql(string $table = null): Mysql
-    {
-        return $this->table($table);
-    }
-
-
 }
