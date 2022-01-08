@@ -23,7 +23,6 @@ final class PdoContent
     private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
     public $dbName;
-    public $cacheKey;
     public $lowCase = false; //是否转换为小写
 
     /**
@@ -50,13 +49,6 @@ final class PdoContent
         $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
         if ($this->lowCase) {
             $this->_CONF['db'] = strtolower($this->_CONF['db']);
-        }
-        if ($this->_CONF['cache']) {
-            if (is_string($this->_CONF['cache'])) {
-                $this->cacheKey = $this->_CONF['cache'];
-            } else {
-                $this->cacheKey = $this->_CONF['db'];
-            }
         }
         $this->dbName = $this->_CONF['db'];
     }

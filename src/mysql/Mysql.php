@@ -4,25 +4,50 @@ declare(strict_types=1);
 namespace esp\dbs\mysql;
 
 use Error;
-use esp\mysql\Pool;
+use esp\dbs\Pool;
 
 if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
 
 /**
  * Class Mysql
- * @package esp\mysql
  */
 final class Mysql
 {
     private $table;
     private $pool;
+    private $config;
+    private $cacheHashKey;
 
-    public function __construct(string $table, Pool $pool)
+    public function __construct(Pool $pool, string $table = null)
     {
         $this->table = $table;
         $this->pool = $pool;
+        $this->config = $pool->config->get('database.mysql');
+
+        if (boolval($this->conig['cache'] ?? 0)) {
+            if (is_string($this->config['cache'])) {
+                $this->cacheHashKey = $this->config['cache'];
+            } else {
+                $this->cacheHashKey = $this->config['db'];
+            }
+        }
     }
 
+
+    /**
+     * 创建一个Mysql实例
+     * @param int $tranID
+     * @param int $traceLevel
+     * @return PdoContent
+     */
+    final private function MysqlObj(int $tranID = 0, int $traceLevel = 0): PdoContent
+    {
+        if ($tranID === 1) $tranID = $this->_tranIndex++;
+
+        if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
+
+        return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config);
+    }
 
     private $_MysqlPool = array();
 
@@ -58,7 +83,6 @@ final class Mysql
      */
     public $paging;
 
-    use MysqlExt;
 
     /**
      * 清除自身的一些对象变量
@@ -114,11 +138,12 @@ final class Mysql
      * $this->delete(['artID'=>11]);              不删除，因为没指定
      *
      *
-     * @param bool $run
+     * @param void $run
      * @return $this
      */
-    final public function cache($run = true): Mysql
+    final public function cache($run = null): Mysql
     {
+        if (is_null($run)) $run = true;
         $this->_cache = $run;
         return $this;
     }
@@ -127,10 +152,10 @@ final class Mysql
     /**
      * 指定当前模型的表
      * 或，返回当前模型对应的表名
-     * @param string|null $table
+     * @param string $table
      * @return $this
      */
-    final public function table(string $table = null)
+    final public function table(string $table): Mysql
     {
         $this->_table = $table;
         return $this;
@@ -183,9 +208,13 @@ final class Mysql
      * @return $this
      * @throws Error
      */
-    final public function trans_cache(string $table, array $where): Mysql
+    final public function delete_cache(string $table, array $where): Mysql
     {
-        if ($this->Cache) $this->Cache->table($table)->delete($where);
+        if ($this->_cache and $this->cacheHashKey) {
+            if (is_array($this->_cache)) $where += $this->_cache;
+            $this->pool->cache($this->cacheHashKey)->table($table)->delete($where);
+            $this->_cache = null;
+        }
 
         return $this;
     }
@@ -205,11 +234,8 @@ final class Mysql
 
         $mysql = $this->MysqlObj(0, 1);
         $val = $mysql->table($this->_table, $this->_protect)->where($where)->delete($this->_traceLevel);
-        if ($this->_cache and $mysql->cacheKey and $this->Cache) {
-            if (is_array($this->_cache)) $where += $this->_cache;
-            $this->Cache->table($this->_table)->delete($where);
-            $this->_cache = null;
-        }
+
+        $this->delete_cache($this->_table, $where);
 
         return $this->checkRunData('delete', $val) ?: $val;
     }
@@ -232,11 +258,8 @@ final class Mysql
         $mysql = $this->MysqlObj(0, 1);
 
         $val = $mysql->table($this->_table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
-        if ($this->_cache and $mysql->cacheKey and $this->Cache) {
-            if (is_array($this->_cache)) $where += $this->_cache;
-            $this->Cache->table($this->_table)->delete($where);
-            $this->_cache = null;
-        }
+
+        $this->delete_cache($this->_table, $where);
 
         return $this->checkRunData('update', $val) ?: $val;
     }
@@ -280,9 +303,9 @@ final class Mysql
             $where = [$this->PRI() => intval($where)];
         }
 
-        if ($this->_cache and $mysql->cacheKey and $this->Cache) {
-
-            if (!empty($data = $this->Cache->table($this->_table)->read($where))) {
+        if ($this->_cache and $this->cacheHashKey) {
+            $data = $this->pool->cache($this->cacheHashKey)->table($this->_table)->read($where);
+            if (!empty($data)) {
                 $this->clear_initial();
                 $this->_cache = null;
                 return $data;
@@ -318,15 +341,22 @@ final class Mysql
         $data = $obj->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
 
-        if ($c = $this->checkRunData('get', $data)) return $c;
-        $val = $data->row($this->columnKey, $_decode);
-
-        if ($this->_cache and $mysql->cacheKey and $this->Cache) {
-            $sc = $this->Cache->table($this->_table)->save($where, $val);
+        $ck = $this->checkRunData('get', $data);
+        if ($ck) {
             $this->_cache = null;
+            return $ck;
         }
 
-        if ($val === false) $val = null;
+        $val = $data->row($this->columnKey, $_decode);
+        if ($val === false or $val === null) {
+            $this->_cache = null;
+            return null;
+        }
+
+        if ($this->_cache and $this->cacheHashKey) {
+            $this->pool->cache($this->cacheHashKey)->table($this->_table)->save($where, $val);
+            $this->_cache = null;
+        }
 
         return $val;
     }
@@ -736,32 +766,6 @@ final class Mysql
             }
         }
         return $this;
-    }
-
-
-    /**
-     * 创建一个Mysql实例
-     * @param int $tranID
-     * @param int $traceLevel
-     * @return PdoContent
-     */
-    final private function MysqlObj(int $tranID = 0, int $traceLevel = 0): PdoContent
-    {
-        $confSet = $this->pool->config->get('database.mysql');
-
-        if (is_null($this->Cache) and boolval($confSet['cache'] ?? 0)) {
-            if (is_string($confSet['cache'])) {
-                $cacheKey = $confSet['cache'];
-            } else {
-                $cacheKey = $confSet['db'];
-            }
-            $this->Cache = new Cache($this->pool->config->_Redis->redis, strval($cacheKey));
-        }
-
-        if ($tranID === 1) $tranID = $this->_tranIndex++;
-        if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
-        $this->_MysqlPool[$tranID] = new PdoContent($tranID, $confSet);
-        return $this->_MysqlPool[$tranID];
     }
 
 

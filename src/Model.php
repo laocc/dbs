@@ -31,53 +31,10 @@ abstract class Model extends Library
 {
 
     /**
-     * @var $_mysqlOBJ Mysql
-     */
-    private $_mysqlOBJ;
-
-
-    /**
      * @param string|null $table
      * @return Mysql
      */
     public function Mysql(string $table = null): Mysql
-    {
-        return $this->table($table);
-    }
-
-    public function Redis()
-    {
-
-    }
-
-    public function Hash()
-    {
-
-    }
-
-    public function Mongodb()
-    {
-
-    }
-
-    public function Sqlite()
-    {
-
-    }
-
-    public function Yac()
-    {
-
-    }
-
-
-    /**
-     * 指定当前模型的表
-     * 或，返回当前模型对应的表名
-     * @param string|null $table
-     * @return Mysql
-     */
-    final public function table(string $table = null): Mysql
     {
         if (is_null($table)) {
             if (isset($this->_table)) $table = $this->_table;
@@ -88,14 +45,45 @@ abstract class Model extends Library
             }
         }
 
-        if (is_null($this->_mysqlOBJ)) {
-            $this->_mysqlOBJ = new Mysql($table, $this->_controller->_pool);
+        return $this->Pool()->mysql($table);
+    }
 
-        } else {
-            $this->_mysqlOBJ->table($table);
-        }
+    /**
+     * @param string|null $table
+     * @return Mysql
+     */
+    final public function table(string $table = null): Mysql
+    {
+        return $this->Pool()->mysql($table);
+    }
 
-        return $this->_mysqlOBJ;
+    public function Redis(int $db = 0)
+    {
+        return $this->Pool()->redis($db);
+    }
+
+    public function Hash()
+    {
+        $this->Pool();
+
+    }
+
+    public function Mongodb()
+    {
+        $this->Pool();
+
+    }
+
+    public function Sqlite()
+    {
+        $this->Pool();
+
+    }
+
+    public function Yac()
+    {
+        $this->Pool();
+
     }
 
 
@@ -108,6 +96,16 @@ abstract class Model extends Library
      */
     public function __call($name, $arguments)
     {
-        return $this->table()->{$name}(...$arguments);
+        return $this->Mysql()->{$name}(...$arguments);
     }
+
+    private function Pool(): Pool
+    {
+        if (is_null($this->_controller->_pool)) {
+            $this->_controller->_pool = new Pool($this->_controller->_config);
+        }
+        return $this->_controller->_pool;
+    }
+
+
 }

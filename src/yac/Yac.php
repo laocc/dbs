@@ -13,10 +13,8 @@ class Yac implements KeyValue
 
     public function __construct(string $table = null)
     {
-        if ($table) {
-            $this->conn = new \Yac($table . '_');
-            $this->table = $table;
-        }
+        if ($table) $this->conn = new \Yac($table . '_');
+        $this->table = $table;
     }
 
     /**
@@ -24,10 +22,10 @@ class Yac implements KeyValue
      * @param string $table
      * @return $this
      */
-    public function table(string $tableName)
+    public function table(string $table)
     {
-        $this->conn = new \Yac($tableName . '_');
-        $this->table = $tableName;
+        $this->conn = new \Yac($table . '_');
+        $this->table = $table;
         return $this;
     }
 

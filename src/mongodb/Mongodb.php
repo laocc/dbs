@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace esp\dbs\mongodb;
 
-use esp\error\EspError;
+use Error;
+use esp\dbs\Pool;
 use \MongoDB\Driver\Manager;
 use \MongoDB\Driver\BulkWrite;
 use \MongoDB\Driver\WriteConcern;
@@ -47,12 +48,13 @@ class Mongodb
 
 
     /**
-     * Mongodb constructor.
-     * @param array $conf
+     * @param Pool $pool
      * @param null $db
      */
-    public function __construct(array $conf, $db = null)
+    public function __construct(Pool $pool, $db = null)
     {
+        $conf = $pool->config->get('database.mysql');
+
         $conf += [
             'host' => '127.0.0.1',
             'port' => 27017,
@@ -101,7 +103,7 @@ class Mongodb
      */
     public function insert(array $value, $batch = false)
     {
-        if (!$this->_table) throw new EspError('未指定表名', 1);
+        if (!$this->_table) throw new Error('未指定表名', 1);
         $bulk = new BulkWrite;
         $writeConcern = new WriteConcern(WriteConcern::MAJORITY, self::_TIME_OUT);
 
@@ -170,9 +172,11 @@ class Mongodb
             return $this;
         }
 
+        $oid = strval($val ?: $type);
+
         //_id合法性检查，并同时转换为ObjectID
-        if ($key === '_id' and preg_match('/^[a-f0-9]{24}$/i', $val ?: $type)) {
-            $this->_where['_id'] = new ObjectID($val ?: $type);
+        if ($key === '_id' and preg_match('/^[a-f0-9]{24}$/i', $oid)) {
+            $this->_where['_id'] = new ObjectID($oid);
             return $this;
         }
         //完全等于
@@ -192,7 +196,7 @@ class Mongodb
 //            list($key, $type) = [substr($key, 0, -1), $this->filter[$t]];
 //        }
 
-        $type = isset($this->filter[$type]) ? $this->filter[$type] : '$in';
+        $type = $this->filter[$type] ?? '$in';
         if (($type === '$in' or $type === '$nin') and !is_array($val)) $val = [$val];
 
         if (isset($this->_where[$key])) {
@@ -210,7 +214,7 @@ class Mongodb
      * @param string $flags
      * @return $this
      */
-    public function preg($key, $patten, $flags = 'is')
+    public function preg($key, $patten, string $flags = 'is')
     {
         $this->_where[$key] = new Regex(trim($patten, '/'), $flags);
         return $this;
@@ -251,7 +255,7 @@ class Mongodb
                         $or[] = [$key => new Regex(trim($val, '/'), 'is')];
 
                     } else {//其他大于小于等
-                        $type = isset($this->filter[$type]) ? $this->filter[$type] : $type;
+                        $type = $this->filter[$type] ?? $type;
                         $or[] = [$key => [$type => $val]];
                     }
                 }
@@ -312,7 +316,7 @@ class Mongodb
      * @param string $asc
      * @return $this
      */
-    public function order($key, $asc = 'asc')
+    public function order($key, string $asc = 'asc')
     {
         //1=asc,-1=desc
         $sort = function ($type) {
@@ -372,7 +376,7 @@ class Mongodb
             'skip' => $skip ?: $this->_skip,
             'limit' => $limit ?: $this->_limit,
         ];
-        if (empty($this->_table)) throw new EspError('未指定表名', 1);
+        if (empty($this->_table)) throw new Error('未指定表名', 1);
 
         //过滤字段=0，仅过滤过该段，但若有任一个=1，则不显示其他没定义的字段
         if (!!$this->_select) {

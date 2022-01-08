@@ -4,8 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\mysql;
 
 use PDOStatement;
-use function esp\helper\numbers;
-use function esp\helper\xml_decode;
+use function esp\dbs\library\numbers;
 
 final class Result
 {
@@ -64,9 +63,6 @@ final class Result
                     $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
                 }
             }
-        }
-        if (isset($decode['xml'])) {
-            foreach ($decode['xml'] as $k) $data[$k[0]] = xml_decode(($data[$k[1]] ?? ''), true) ?: [];
         }
         if (isset($decode['time'])) {
             foreach ($decode['time'] as $k) {

@@ -9,7 +9,7 @@ use function esp\helper\root;
 /**
  * Model中复用类方法
  */
-trait MysqlExt
+class Helper
 {
 
     /**

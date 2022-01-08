@@ -3,13 +3,12 @@ declare(strict_types=1);
 
 namespace esp\dbs\yac;
 
-use esp\error\EspError;
+use Error;
 use esp\dbs\KeyValue;
 
 /**
  * 简单文件存储缓存
  * Class File
- * @package esp\core\db
  */
 final class File implements KeyValue
 {
@@ -78,12 +77,12 @@ final class File implements KeyValue
 
     public function host()
     {
-        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 1);
+        throw new Error("当前系统只是简单文件存储服务，请改用Redis服务", 1);
     }
 
     public function publish(string $channel, string $action, $message)
     {
-        throw new EspError("当前系统只是简单文件存储服务，请改用Redis服务", 1);
+        throw new Error("当前系统只是简单文件存储服务，请改用Redis服务", 1);
     }
 
 

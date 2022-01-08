@@ -32,7 +32,7 @@ final class Cache
 
     /**
      * @param array $where
-     * @return array|int|string
+     * @return false|string|null
      */
     public function read(array $where)
     {
