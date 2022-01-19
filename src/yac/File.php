@@ -5,6 +5,7 @@ namespace esp\dbs\yac;
 
 use Error;
 use esp\dbs\kernel\KeyValue;
+use function esp\helper\mk_dir;
 
 /**
  * 简单文件存储缓存
@@ -15,13 +16,18 @@ final class File implements KeyValue
     private $path;
     private $ext = 'TEMP';
 
+    /**
+     * File constructor.
+     * @param array $conf
+     * @throws \esp\helper\library\Error
+     */
     public function __construct(array $conf)
     {
         $this->path = preg_replace_callback('/\{(_[A-Z_]+)\}/', function ($matches) {
             return defined($matches[1]) ? constant($matches[1]) : $matches[1];
         }, ($conf['path'] ?? '/tmp'));
 
-        if (!is_dir($this->path)) mkdir($this->path, 0740, true);
+        mk_dir($this->path);
         $this->path = rtrim($this->path, '/');
     }
 
