@@ -23,7 +23,7 @@ final class Pool
         $this->config = $config;
     }
 
-    public function redis(int $dbIndex)
+    public function redis(int $dbIndex): Redis
     {
         if (is_null($this->_redis)) {
             $conf = $this->config['redis'] ?? null;
