@@ -2,9 +2,9 @@
 
 namespace esp\dbs\kernel;
 
-
 use esp\dbs\mysql\Mysql;
 use esp\dbs\redis\Redis;
+use esp\dbs\redis\RedisHash;
 
 
 /**
@@ -59,35 +59,40 @@ trait DbsKernel
 
     /**
      * @param int $db
+     * @param int $traceLevel
      * @return Redis
      */
-    public function Redis(int $db = 0): Redis
+    public function Redis(int $db = 0, int $traceLevel = 0): Redis
     {
         return $this->Pool()->redis($db);
     }
 
-    public function Hash()
+    /**
+     * @param string $table
+     * @return RedisHash
+     */
+    public function Hash(string $table)
     {
-        $this->Pool();
-
+        return $this->Redis()->hash($table);
     }
 
-    public function Mongodb()
+    /**
+     * @param string $table
+     * @return \esp\dbs\mongodb\Mongodb
+     */
+    public function Mongodb(string $table)
     {
-        $this->Pool();
-
+        return $this->Pool()->mongodb($table);
     }
 
     public function Sqlite()
     {
-        $this->Pool();
-
+//        return $this->Pool()->Sqlite;
     }
 
     public function Yac()
     {
         $this->Pool();
-
     }
 
 
