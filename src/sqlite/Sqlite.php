@@ -3,25 +3,18 @@
 namespace esp\dbs\sqlite;
 
 use PDO;
-use esp\core\Controller;
-use esp\core\Debug;
 use function esp\helper\mk_dir;
 
 final class Sqlite
 {
     private $conf;
     private $db;
-    /**
-     * @var $_debug Debug
-     */
-    private $_debug;
     private $table;
 
-    public function __construct(Controller $controller, array $conf)
+    public function __construct(array $conf)
     {
         $this->conf = $conf;
         if (!isset($this->conf['db'])) throw new \Error('Sqlite库文件未指定');
-        $this->_debug = &$controller->_debug;
 
         if (!file_exists($this->conf['db'])) {
             mk_dir($this->conf['db']);
@@ -35,11 +28,6 @@ final class Sqlite
     public function __destruct()
     {
         $this->db = null;
-    }
-
-    private function debug($value): void
-    {
-        $this->_debug->relay($value);
     }
 
     public function table(string $table): Sqlite

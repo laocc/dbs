@@ -52,7 +52,6 @@ final class Mysql
     public $paging;
 
 
-
     public function __construct(Pool $pool, array $conf, string $table = null)
     {
         $this->_table = $table;
@@ -81,7 +80,7 @@ final class Mysql
 
         if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
 
-        return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config);
+        return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config, $this->pool);
     }
 
     /**

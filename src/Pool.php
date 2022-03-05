@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs;
 
 use Error;
+use esp\core\Controller;
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Cache;
 use esp\dbs\mysql\Mysql;
@@ -17,11 +18,24 @@ final class Pool
     private $_cache;
     private $_redis;
     private $_mongodb;
+    private $controller;
 
-    public function __construct(array $config)
+    public function __construct(array $config, Controller $controller)
     {
         $this->config = $config;
+        $this->controller = $controller;
     }
+
+    public function debug($args): void
+    {
+        $this->controller->_dispatcher->debug(...$args);
+    }
+
+    public function error($args): void
+    {
+        $this->controller->_dispatcher->error(...$args);
+    }
+
 
     public function redis(int $dbIndex): Redis
     {

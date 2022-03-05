@@ -3,14 +3,15 @@ declare(strict_types=1);
 
 namespace esp\dbs\mysql;
 
+use esp\dbs\Pool;
 use PDO;
 use Error;
 use PDOException;
-use esp\core\Debug;
 
 
 final class PdoContent
 {
+    private $pool;
     private $_CONF;//配置定义
     private $_trans_run = array();//事务状态
     private $_trans_error = array();//事务出错状态
@@ -18,7 +19,6 @@ final class PdoContent
     private $transID;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
-    private $_debug;
     private $_counter;
     private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
@@ -29,11 +29,12 @@ final class PdoContent
      * PdoContent constructor.
      * @param int $tranID
      * @param array|null $conf
-     * @throws Error
+     * @param Pool $pool
      */
-    public function __construct(int $tranID = 0, array $conf = null)
+    public function __construct(int $tranID = 0, array $conf, Pool $pool)
     {
         if (!is_array($conf)) throw new Error('Mysql配置信息错误', 1);
+        $this->pool = $pool;
         $this->_CONF = $conf + [
                 'charset' => 'utf8mb4',
                 'collation' => 'utf8mb4_general_ci',
@@ -98,21 +99,6 @@ final class PdoContent
 
 
     /**
-     * @param $value
-     * @param int $traceLevel
-     * @return false|null|Debug
-     */
-    public function debug($value = '_RETURN_DEBUG_', int $traceLevel = 1)
-    {
-        if (is_null($this->_debug)) return null;
-        if ($value === '_RETURN_DEBUG_') return $this->_debug;
-        if ($traceLevel > 10) $traceLevel = 2;
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, ($traceLevel + 1));
-        $trace = $trace[$traceLevel] ?? [];
-        return $this->_debug->mysql_log($value, $trace);
-    }
-
-    /**
      * @param bool $upData
      * @param int $trans_id
      * @param int $traceLevel
@@ -168,7 +154,7 @@ final class PdoContent
             try {
 
                 $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
-                (!_CLI) and $this->debug("{$real}({$trans_id}):{$conStr}");
+                (!_CLI) and $this->pool->debug("{$real}({$trans_id}):{$conStr}");
 
                 if (_CLI and $try > 0) {
                     print_r([$opts, $cnf, $conStr]);
@@ -408,9 +394,8 @@ final class PdoContent
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
 
-            $this->debug($debugOption, $traceLevel + 1)->error([
-                "SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL
-            ], $traceLevel + 1);
+            $this->pool->debug($debugOption, $traceLevel + 1);
+            $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL], $traceLevel + 1);
         }
 
         if (!empty($error)) {
@@ -421,7 +406,8 @@ final class PdoContent
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
             if ($debug and !_CLI) {
-                $this->debug($debugOption, $traceLevel + 1)->error($error, $traceLevel + 1);
+                $this->pool->debug($debugOption, $traceLevel + 1);
+                $this->pool->error($error, $traceLevel + 1);
             }
 
             if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
@@ -434,7 +420,7 @@ final class PdoContent
                         'after' => time() - $this->connect_time[$transID],
                     ]);
                 } else {
-                    ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
+                    ($debug and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
@@ -445,10 +431,10 @@ final class PdoContent
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugOption);
-            ($debug and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
+            ($debug and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
-        ($debug and $debug_sql and !_CLI) and $this->debug($debugOption, $traceLevel + 1);
+        ($debug and $debug_sql and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
         return $result;
     }
 
@@ -649,9 +635,8 @@ final class PdoContent
                     $stmtC->execute($option['param']);
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
-                        $this->debug()
-                            ->relay($option['_count_sql'])
-                            ->error("SQL count 超时{$this->_CONF['time_limit']}s");
+                        $this->pool->debug($option['_count_sql']);
+                        $this->pool->error("SQL count 超时{$this->_CONF['time_limit']}s");
                     }
                     $count = $stmtC->fetch(PDO::FETCH_ASSOC);
                 }
@@ -676,8 +661,8 @@ final class PdoContent
                     $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
-                        $this->debug()->relay($option['_count_sql'])
-                            ->error("SQL count 超时{$this->_CONF['time_limit']}s");
+                        $this->pool->debug($option['_count_sql']);
+                        $this->pool->error("SQL count 超时{$this->_CONF['time_limit']}s");
                     }
                 }
 
@@ -833,7 +818,7 @@ final class PdoContent
             'result' => true,
             'error' => $error[2] ?? json_encode($error, 256 | 64),
         ];
-        !_CLI and $this->debug($this->_trans_error);
+        !_CLI and $this->pool->debug($this->_trans_error);
 
         return $CONN->rollBack();
     }

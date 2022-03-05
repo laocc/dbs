@@ -65,7 +65,6 @@ final class Redis implements KeyValue
             }
         } catch (Error $e) {
             if ($tryCont++ > 2) {
-                if (_DEBUG) print_r($conf);
                 $err = base64_encode(print_r($conf, true));
                 throw new Error($e->getMessage() . '/' . $err, $e->getCode(), 1, 1);
             }
