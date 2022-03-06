@@ -39,6 +39,12 @@ final class Paging
         return $this;
     }
 
+    public function size(int $size): Paging
+    {
+        $this->size = $size;
+        return $this;
+    }
+
     /**
      * Model中调用，送入求和数据
      *

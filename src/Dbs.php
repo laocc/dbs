@@ -22,7 +22,7 @@ abstract class Dbs extends Library
     public function Pool(): Pool
     {
         if (is_null($this->_controller->_pool)) {
-            $conf = $this->_controller->_config->get('databases');
+            $conf = $this->_controller->_config->get('database');
             $this->_controller->_pool = new Pool($conf, $this->_controller);
         }
         return $this->_controller->_pool;

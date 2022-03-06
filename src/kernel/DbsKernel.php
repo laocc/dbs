@@ -2,13 +2,15 @@
 
 namespace esp\dbs\kernel;
 
+use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Mysql;
+use esp\dbs\mysql\Paging;
 use esp\dbs\redis\Redis;
 use esp\dbs\redis\RedisHash;
 
 
 /**
- * 以下方法调用的都是Mysql中的方法
+ * 以下方法调用的都是Mysql中的方法，由__call转发
  *
  * @method void insert(...$params) 执行插入
  * @method void delete(...$params) 执行删除
@@ -20,15 +22,64 @@ use esp\dbs\redis\RedisHash;
  * @method Array all(...$params) 读取多条记录
  * @method Array list(...$params) 读取多条记录，分页
  *
- * @method Mysql paging(...$params) 设置分页
  * @method Mysql select(...$params) 选择字段
  * @method Mysql join(...$params) Join表
+ *
+ * @method Mysql paging(...$params) 设置分页
  *
  * Class ModelPdo
  * @package esp\core
  */
 trait DbsKernel
 {
+
+    /**
+     * 针对Mysql
+     *
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
+    public function __call($name, $arguments)
+    {
+        return $this->Mysql()->{$name}(...$arguments);
+    }
+
+    public function __get($name)
+    {
+        switch ($name) {
+            case 'paging':
+                return $this->Pool()->paging;
+            case 'table':
+                return $this->Pool()->_mysql->_table;
+            case 'id':
+                break;
+        }
+
+        return null;
+    }
+
+
+    public function __set($name, ...$value)
+    {
+        switch ($name) {
+            case 'paging':
+                $size = $value[0] ?? 10;
+                $index = $value[1] ?? 1;
+                $recode = $value[2] ?? null;
+                return $this->Pool()->paging = = new Paging($size, $index, $recode);
+            case 'index':
+                $paging = &$this->Pool()->paging;
+                if (is_null($paging)) $paging = new Paging();
+                $paging->index(intval($value[0]));
+                break;
+            case 'table':
+                return $this->Pool()->_mysql->_table = $value[0];
+        }
+
+        return null;
+    }
+
 
     /**
      * @param string|null $table
@@ -71,16 +122,16 @@ trait DbsKernel
      * @param string $table
      * @return RedisHash
      */
-    public function Hash(string $table)
+    public function Hash(string $table): RedisHash
     {
         return $this->Redis()->hash($table);
     }
 
     /**
      * @param string $table
-     * @return \esp\dbs\mongodb\Mongodb
+     * @return Mongodb
      */
-    public function Mongodb(string $table)
+    public function Mongodb(string $table): Mongodb
     {
         return $this->Pool()->mongodb($table);
     }
@@ -93,19 +144,6 @@ trait DbsKernel
     public function Yac()
     {
         $this->Pool();
-    }
-
-
-    /**
-     * 针对Mysql
-     *
-     * @param $name
-     * @param $arguments
-     * @return mixed
-     */
-    public function __call($name, $arguments)
-    {
-        return $this->Mysql()->{$name}(...$arguments);
     }
 
 

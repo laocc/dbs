@@ -19,7 +19,8 @@ final class Mysql
 
     private $_MysqlPool = array();
 
-    private $_table;        //创建对象时，或明确指定当前模型的对应表名
+    public $_table;        //创建对象时，或明确指定当前模型的对应表名
+
     private $_cache = null;       //缓存指令
     private $_tranIndex = 0;       //事务
 
@@ -46,13 +47,7 @@ final class Mysql
     protected $columnKey = null;
     protected $groupKey = null;
 
-    /**
-     * @var Paging $paging
-     */
-    public $paging;
-
-
-    public function __construct(Pool $pool, array $conf, string $table = null)
+    public function __construct(Pool $pool, array $conf, string $table)
     {
         $this->_table = $table;
         $this->pool = $pool;
@@ -454,24 +449,27 @@ final class Mysql
         $obj->count($count === true);
         if (is_string($this->sumKey)) $obj->sum($this->sumKey);
 
-        if (is_null($this->paging)) $this->paging = new Paging();
-        $skip = ($this->paging->index - 1) * $this->paging->size;
-        $data = $obj->limit($this->paging->size, $skip)->get(0, $this->_traceLevel);
+        if (is_null($this->pool->paging)) {
+            $this->pool->paging = new Paging();
+        }
+
+        $skip = ($this->pool->paging->index - 1) * $this->pool->paging->size;
+        $data = $obj->limit($this->pool->paging->size, $skip)->get(0, $this->_traceLevel);
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('list', $data)) return $v;
 
-        if ($this->sumKey) $this->paging->sum($data->sum());
+        if ($this->sumKey) $this->pool->paging->sum($data->sum());
 
         if ($count === true) {
-            $this->paging->calculate($data->count());
+            $this->pool->paging->calculate($data->count());
         } else if (is_int($count)) {
             if ($count <= 10) {
-                $this->paging->calculate(($count + ($this->paging->index - 1)) * $this->paging->size, true);
+                $this->pool->paging->calculate(($count + ($this->pool->paging->index - 1)) * $this->pool->paging->size, true);
             } else {
-                $this->paging->calculate($count);
+                $this->pool->paging->calculate($count);
             }
         } else {
-            $this->paging->calculate(0);
+            $this->pool->paging->calculate(0);
         }
 
         return $data->rows(0, null, $_decode);
@@ -606,21 +604,19 @@ final class Mysql
         return $this;
     }
 
-    final public function pagingSet(int $size, int $index = 0, int $recode = null): Mysql
+    final public function paging(int $size, int $index = 0, int $recode = null): Mysql
     {
-        $this->paging = new Paging($size, $index, $recode);
-        return $this;
-    }
-
-    final public function pageSet(int $size, int $index = 0, int $recode = null): Mysql
-    {
-        $this->paging = new Paging($size, $index, $recode);
+        if (is_null($this->pool->paging)) {
+            $this->pool->paging = new Paging($size, $index, $recode);
+        } else {
+            $this->pool->paging->size($size)->index($index);
+        }
         return $this;
     }
 
     final public function pagingIndex(int $index): Mysql
     {
-        $this->paging->index($index);
+        $this->pool->paging->index($index);
         return $this;
     }
 

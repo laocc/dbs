@@ -8,17 +8,38 @@ use esp\core\Controller;
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Cache;
 use esp\dbs\mysql\Mysql;
+use esp\dbs\mysql\Paging;
 use esp\dbs\redis\Redis;
 
 final class Pool
 {
     public $config;
 
-    private $_mysql;
+    /**
+     * @var $_mysql Mysql
+     */
+    public $_mysql;
+    /**
+     * @var $_cache Cache
+     */
     private $_cache;
+    /**
+     * @var $_redis Redis
+     */
     private $_redis;
+    /**
+     * @var $_mongodb Mongodb
+     */
     private $_mongodb;
+    /**
+     * @var Controller
+     */
     private $controller;
+
+    /**
+     * @var $paging Paging
+     */
+    public $paging;
 
     public function __construct(array $config, Controller $controller)
     {
@@ -26,12 +47,12 @@ final class Pool
         $this->controller = $controller;
     }
 
-    public function debug($args): void
+    public function debug(...$args): void
     {
         $this->controller->_dispatcher->debug(...$args);
     }
 
-    public function error($args): void
+    public function error(...$args): void
     {
         $this->controller->_dispatcher->error(...$args);
     }
@@ -51,7 +72,7 @@ final class Pool
     public function mysql(string $table): Mysql
     {
         if (is_null($this->_mysql)) {
-            $conf = $pool->config['mysql'] ?? null;
+            $conf = $this->config['mysql'] ?? null;
             if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mysql)项');
 
             return $this->_mysql = new Mysql($this, $conf, $table);
@@ -62,7 +83,7 @@ final class Pool
     public function mongodb(string $table): Mongodb
     {
         if (is_null($this->_mongodb)) {
-            $conf = $pool->config['mongodb'] ?? null;
+            $conf = $this->config['mongodb'] ?? null;
             if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mongodb)项');
 
             return $this->_mongodb = new Mongodb($this, $conf, $table);
