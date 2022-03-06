@@ -8,7 +8,7 @@ use esp\core\Controller;
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Cache;
 use esp\dbs\mysql\Mysql;
-use esp\dbs\mysql\Paging;
+use esp\dbs\library\Paging;
 use esp\dbs\redis\Redis;
 
 final class Pool

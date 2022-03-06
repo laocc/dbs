@@ -4,7 +4,7 @@ namespace esp\dbs\kernel;
 
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Mysql;
-use esp\dbs\mysql\Paging;
+use esp\dbs\library\Paging;
 use esp\dbs\redis\Redis;
 use esp\dbs\redis\RedisHash;
 

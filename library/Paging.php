@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\dbs\mysql;
+namespace esp\dbs\library;
 
 /**
  * Model中用的分页
