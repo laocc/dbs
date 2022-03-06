@@ -31,7 +31,7 @@ final class PdoContent
      * @param array|null $conf
      * @param Pool $pool
      */
-    public function __construct(int $tranID = 0, array $conf, Pool $pool)
+    public function __construct(int $tranID, array $conf, Pool $pool)
     {
         if (!is_array($conf)) throw new Error('Mysql配置信息错误', 1);
         $this->pool = $pool;
@@ -46,11 +46,6 @@ final class PdoContent
             ];
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
-
-        $this->lowCase = boolval($this->_CONF['lowercase'] ?? 0);
-        if ($this->lowCase) {
-            $this->_CONF['db'] = strtolower($this->_CONF['db']);
-        }
         $this->dbName = $this->_CONF['db'];
     }
 

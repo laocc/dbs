@@ -5,6 +5,7 @@ namespace esp\dbs\mysql;
 
 use Error;
 use esp\dbs\Pool;
+use esp\dbs\library\Paging;
 
 if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
 
@@ -15,6 +16,7 @@ final class Mysql
 {
     private $pool;
     private $config;
+    private $dbName;
     private $cacheHashKey;
 
     private $_MysqlPool = array();
@@ -47,11 +49,14 @@ final class Mysql
     protected $columnKey = null;
     protected $groupKey = null;
 
+    use Helper;
+
     public function __construct(Pool $pool, array $conf, string $table)
     {
         $this->_table = $table;
         $this->pool = $pool;
         $this->config = $conf;
+        $this->dbName = $conf['db'];
 
         if (boolval($this->conig['cache'] ?? 0)) {
             if (is_string($this->config['cache'])) {

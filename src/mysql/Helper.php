@@ -9,8 +9,18 @@ use function esp\helper\root;
 /**
  * Model中复用类方法
  */
-class Helper
+trait Helper
 {
+
+    /**
+     * @param string $table
+     * @return Cache
+     */
+    private function hash(string $table): Cache
+    {
+        return $this->pool->cache($this->dbName)->table($table);
+    }
+
 
     /**
      * select * from INFORMATION_SCHEMA.Columns where table_name='tabAdmin' and table_schema='dbPayCenter';
@@ -20,21 +30,15 @@ class Helper
      */
     final public function PRI(string $table = null): string
     {
-        if (isset($this->_id) and !empty($this->_id)) return $this->_id;
-        if (!is_null($this->__pri)) return $this->__pri;
-        if (is_null($table)) {
-            $table = $this->table();
-        }
+        if (is_null($table)) $table = $this->_table;
         if (!$table) throw new Error('Unable to get table name');
-        $mysql = $this->Mysql();
-        if ($mysql->lowCase) $table = strtolower($table);
+        $mysql = $this->MysqlObj();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
             ->get()->row();
         if (empty($val)) return '';
-        $this->__pri = $val['COLUMN_NAME'];
-        return $this->__pri;
+        return $val['COLUMN_NAME'];
     }
 
     /**
@@ -48,7 +52,7 @@ class Helper
     {
         //TRUNCATE TABLE dbAdmin;
         //alter table users AUTO_INCREMENT=10000;
-        $mysql = $this->Mysql();
+        $mysql = $this->MysqlObj();
         return $mysql->query("alter table {$table} AUTO_INCREMENT={$id}", [], null, 1);
     }
 
@@ -60,10 +64,10 @@ class Helper
      */
     final public function analyze(string $table)
     {
-        $mysql = $this->Mysql();
-        $this->hash("{$mysql->dbName}.{$table}")->set('_field', []);
-        $this->hash("{$mysql->dbName}.{$table}")->set('_title', []);
-        $val = $mysql->query("analyze table `{$table}`", [], null, 1)->rows();
+        $this->hash($table)->set('_field', []);
+        $this->hash($table)->set('_title', []);
+
+        $val = $this->MysqlObj()->query("analyze table `{$table}`", [], null, 1)->rows();
         if (isset($val[1])) {
             return $val[0]['Msg_text'];
         } else {
@@ -80,13 +84,12 @@ class Helper
     final public function desc($table = null, bool $html = false)
     {
         if (is_bool($table)) list($table, $html) = [null, $table];
-        $table = $table ?: $this->table();
+        $table = $table ?: $this->_table;
         if (!$table) throw new Error('Unable to get table name');
-        $mysql = $this->Mysql();
-        if ($mysql->lowCase) $table = strtolower($table);
-        $val = $mysql->table('INFORMATION_SCHEMA.Columns')
+
+        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
             ->select('column_name as name,COLUMN_DEFAULT as default,column_type as type,column_key as key,column_comment as comment')
-            ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
+            ->where(['table_schema' => $this->dbName, 'table_name' => $table])
             ->order('ORDINAL_POSITION', 'asc')
             ->get()->rows();
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
@@ -110,10 +113,10 @@ class Helper
      */
     final public function tables(bool $html = false)
     {
-        $mysql = $this->Mysql();
-        $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
+        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.TABLES')
             ->select("TABLE_NAME as name,DATA_LENGTH as data,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
-            ->where(['TABLE_SCHEMA' => $mysql->dbName])->get()->rows();
+            ->where(['TABLE_SCHEMA' => $this->dbName])->get()->rows();
+
         if (empty($val)) return [];
         if ($html) {
             $table = [];
@@ -137,12 +140,11 @@ class Helper
      */
     final public function fields(string $table = null)
     {
-        $table = $table ?: $this->table();
+        $table = $table ?: $this->_table;
         if (!$table) throw new Error('Unable to get table name');
-        $mysql = $this->Mysql();
-        if ($mysql->lowCase) $table = strtolower($table);
-        $val = $mysql->table('INFORMATION_SCHEMA.Columns')
-            ->where(['table_schema' => $mysql->dbName, 'table_name' => $table])
+
+        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
+            ->where(['table_schema' => $this->dbName, 'table_name' => $table])
             ->get()->rows();
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         return $val;
@@ -162,20 +164,20 @@ class Helper
         $root = root($path);
         if (!is_dir($root)) return "请先创建[{$root}]目录";
 
-        $mysql = $this->Mysql();
-        /**
-         * @var $mysql Mysql
-         */
+        $mysql = $this->MysqlObj();
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
             ->select('TABLE_NAME')
-            ->where(['TABLE_SCHEMA' => $mysql->dbName])->get()->rows();
+            ->where(['TABLE_SCHEMA' => $this->dbName])->get()->rows();
         $tables = [];
         foreach ($val as $table) {
             $tab = ucfirst(substr($table['TABLE_NAME'], 3)) . 'Model';
             if (!is_readable("{$root}/{$tab}.php")) {
                 $keyID = $mysql->table('INFORMATION_SCHEMA.Columns')
                     ->select('COLUMN_NAME')
-                    ->where(['table_schema' => $mysql->dbName, 'table_name' => $table['TABLE_NAME'], 'EXTRA' => 'auto_increment'])
+                    ->where([
+                        'table_schema' => $this->dbName,
+                        'table_name' => $table['TABLE_NAME'],
+                        'EXTRA' => 'auto_increment'])
                     ->get()->row();
                 $namespace = str_replace('/', '\\', trim($path, '/'));
                 $php = <<<PHP
@@ -203,17 +205,15 @@ PHP;
      */
     final public function title(): array
     {
-        $mysql = $this->Mysql();
-        $table = $this->table();
-        $data = $this->hash("{$mysql->dbName}.{$table}")->get('_title');
+        $table = $this->_table;
+        $data = $this->hash($table)->get('_title');
         if (!empty($data)) return $data;
-        if ($mysql->lowCase) $table = strtolower($table);
         if (!$table) throw new Error('Unable to get table name');
-        $val = $mysql->table('INFORMATION_SCHEMA.Columns')
+        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')
             ->where(['table_name' => $table])->get()->rows();
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
-        $this->hash("{$mysql->dbName}.{$table}")->set('_title', $val);
+        $this->hash($table)->set('_title', $val);
         return $val;
     }
 
@@ -226,10 +226,10 @@ PHP;
      */
     final private function _FillField(string $dbName, string $table, array $data)
     {
-        $field = $this->hash("{$dbName}.{$table}")->get('_field');
+        $field = $this->hash($table)->get('_field');
         if (empty($field)) {
             $field = $this->fields($table);
-            $s = $this->hash("{$dbName}.{$table}")->set('_field', $field);
+            $s = $this->hash($table)->set('_field', $field);
         }
         if (isset($data[0])) {
             $rowData = $data[0];
@@ -261,10 +261,10 @@ PHP;
 
     final private function _AllField(string $dbName, string $table, array $data)
     {
-        $field = $this->hash("{$dbName}.{$table}")->get('_field');
+        $field = $this->hash($table)->get('_field');
         if (empty($field)) {
             $field = $this->fields($table);
-            $this->hash("{$dbName}.{$table}")->set('_field', $field);
+            $this->hash($table)->set('_field', $field);
         }
         if (isset($data[0])) {
             $rowData = $data[0];

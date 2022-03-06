@@ -32,6 +32,10 @@ use esp\dbs\redis\RedisHash;
  */
 trait DbsKernel
 {
+    /**
+     * @var Paging $paging 分页对象，实际上这个变量是无值的的，这里定义一下，只是为了让调用的地方不显示异常，最终调用时还是要经过__get()处理
+     */
+    protected $paging;
 
     /**
      * 针对Mysql

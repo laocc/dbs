@@ -30,6 +30,18 @@ final class Cache
         return $this;
     }
 
+    public function get(string $key)
+    {
+        return $this->redis->hGet($this->hashKey, $key);
+    }
+
+
+    public function set(string $key, $value)
+    {
+        return $this->redis->hSet($this->hashKey, $key, $value);
+    }
+
+
     /**
      * @param array $where
      * @return false|string|null
