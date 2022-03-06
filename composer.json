@@ -8,10 +8,8 @@
     "ext-json": "*"
   },
   "autoload": {
-    "files": [
-      "library/functions.php"
-    ],
     "psr-4": {
+      "esp\\dbs\\library\\": "library/",
       "esp\\dbs\\": "src/"
     }
   }

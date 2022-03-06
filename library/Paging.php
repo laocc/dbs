@@ -100,5 +100,14 @@ final class Paging
         ];
     }
 
+    public function __toString()
+    {
+        return json_encode($this->value(), 320);
+    }
+
+    public function __debugInfo()
+    {
+        return $this->value();
+    }
 
 }

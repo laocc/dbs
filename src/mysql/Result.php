@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\mysql;
 
 use PDOStatement;
-use function esp\dbs\library\numbers;
+use function esp\helper\numbers;
 
 final class Result
 {
