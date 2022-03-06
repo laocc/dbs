@@ -16,12 +16,12 @@ final class Mysql
 {
     private $pool;
     private $config;
-    private $dbName;
     private $cacheHashKey;
 
     private $_MysqlPool = array();
 
-    public $_table;        //创建对象时，或明确指定当前模型的对应表名
+    public $dbName;//库名
+    public $_table;//表名，创建对象时，或明确指定当前模型的对应表名
 
     private $_cache = null;       //缓存指令
     private $_tranIndex = 0;       //事务
@@ -622,6 +622,12 @@ final class Mysql
     final public function pagingIndex(int $index): Mysql
     {
         $this->pool->paging->index($index);
+        return $this;
+    }
+
+    final public function pagingSize(int $size): Mysql
+    {
+        $this->pool->paging->size($size);
         return $this;
     }
 

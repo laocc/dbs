@@ -26,6 +26,8 @@ use esp\dbs\redis\RedisHash;
  * @method Mysql join(...$params) Join表
  *
  * @method Mysql paging(...$params) 设置分页
+ * @method Mysql pagingIndex(...$params) 设置分页码
+ * @method Mysql pagingSize(...$params) 设置分页每页记录数
  *
  * Class ModelPdo
  * @package esp\core
@@ -37,6 +39,11 @@ trait DbsKernel
      */
     protected $paging;
 
+    private $alias = [
+        'pagingSet' => 'paging',
+        'pageSet' => 'paging',
+    ];
+
     /**
      * 针对Mysql
      *
@@ -46,6 +53,7 @@ trait DbsKernel
      */
     public function __call($name, $arguments)
     {
+        if (isset($this->alias[$name])) $name = $this->alias[$name];
         return $this->Mysql()->{$name}(...$arguments);
     }
 
