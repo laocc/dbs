@@ -174,9 +174,9 @@ final class Mysql
         if (!is_string($data)) return null;
         $json = json_decode($data, true);
         if (isset($json[2]) or isset($json['2'])) {
-            throw new Error($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel + 1);
+            throw new Error($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel + 2);
         }
-        throw new Error($data, $this->_traceLevel + 1);
+        throw new Error($data, $this->_traceLevel + 2);
     }
 
     /**
@@ -190,10 +190,10 @@ final class Mysql
      */
     final public function insert(array $data, bool $full = false, bool $replace = false)
     {
-        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel);
+        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $mysql = $this->MysqlObj(0, 1);
         $data = $full ? $data : $this->_FillField($mysql->dbName, $this->_table, $data);
-        $val = $mysql->table($this->_table, $this->_protect)->insert($data, $replace, $this->_traceLevel);
+        $val = $mysql->table($this->_table, $this->_protect)->insert($data, $replace, $this->_traceLevel + 1);
         $ck = $this->checkRunData('insert', $val);
         if ($ck) return $ck;
         return $val;
@@ -226,13 +226,13 @@ final class Mysql
      */
     final public function delete($where)
     {
-        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel);
+        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
 
         $mysql = $this->MysqlObj(0, 1);
-        $val = $mysql->table($this->_table, $this->_protect)->where($where)->delete($this->_traceLevel);
+        $val = $mysql->table($this->_table, $this->_protect)->where($where)->delete($this->_traceLevel + 1);
 
         $this->delete_cache($this->_table, $where);
 
@@ -249,14 +249,14 @@ final class Mysql
      */
     final public function update($where, array $data)
     {
-        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel);
+        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
-        if (empty($where)) throw new Error('Update Where 禁止为空', $this->_traceLevel);
+        if (empty($where)) throw new Error('Update Where 禁止为空', $this->_traceLevel + 1);
         $mysql = $this->MysqlObj(0, 1);
 
-        $val = $mysql->table($this->_table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel);
+        $val = $mysql->table($this->_table, $this->_protect)->where($where)->update($data, true, $this->_traceLevel + 1);
 
         $this->delete_cache($this->_table, $where);
 
@@ -297,7 +297,7 @@ final class Mysql
     final public function get($where, string $orderBy = null, string $sort = 'asc')
     {
         $mysql = $this->MysqlObj(0, 1);
-        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel);
+        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
         }
@@ -337,7 +337,7 @@ final class Mysql
             if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
             $obj->order($orderBy, $sort);
         }
-        $data = $obj->get(0, $this->_traceLevel);
+        $data = $obj->get(0, $this->_traceLevel + 1);
         $_decode = $this->_decode;
 
         $ck = $this->checkRunData('get', $data);
@@ -370,7 +370,7 @@ final class Mysql
      */
     final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
     {
-        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel);
+        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect)->prepare();
         if ($orderBy === 'PRI') {
             $orderBy = $this->PRI($this->_table);
@@ -404,7 +404,7 @@ final class Mysql
             $obj->order($orderBy, $sort);
         }
 
-        $data = $obj->get($limit, $this->_traceLevel);
+        $data = $obj->get($limit, $this->_traceLevel + 1);
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('all', $data)) return $v;
 
@@ -420,7 +420,7 @@ final class Mysql
      */
     final public function list($where = null, $orderBy = null, string $sort = 'desc')
     {
-        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel);
+        if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect);
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
@@ -459,7 +459,7 @@ final class Mysql
         }
 
         $skip = ($this->pool->paging->index - 1) * $this->pool->paging->size;
-        $data = $obj->limit($this->pool->paging->size, $skip)->get(0, $this->_traceLevel);
+        $data = $obj->limit($this->pool->paging->size, $skip)->get(0, $this->_traceLevel + 1);
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('list', $data)) return $v;
 

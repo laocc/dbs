@@ -64,24 +64,30 @@ trait DbsKernel
     }
 
 
-    public function __set($name, ...$value)
+    public function __set($name, $value)
     {
         switch ($name) {
             case 'paging':
-                $size = $value[0] ?? 10;
-                $index = $value[1] ?? 1;
-                $recode = $value[2] ?? null;
-                return $this->Pool()->paging = = new Paging($size, $index, $recode);
+                $size = 10;
+                $index = 1;
+                $recode = null;
+                if (is_int($value)) $size = $value;
+                else if (is_array($value)) {
+                    $size = $value[0] ?? 10;
+                    $index = $value[1] ?? 1;
+                    $recode = $value[2] ?? null;
+                }
+                $this->Pool()->paging = new Paging($size, $index, $recode);
+                break;
             case 'index':
                 $paging = &$this->Pool()->paging;
                 if (is_null($paging)) $paging = new Paging();
-                $paging->index(intval($value[0]));
+                $paging->index(intval($value));
                 break;
             case 'table':
-                return $this->Pool()->_mysql->_table = $value[0];
+                $this->Pool()->_mysql->_table = $value;
+                break;
         }
-
-        return null;
     }
 
 

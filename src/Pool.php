@@ -77,7 +77,7 @@ final class Pool
 
             return $this->_mysql = new Mysql($this, $conf, $table);
         }
-        return $this->_mysql;
+        return $this->_mysql->table($table);
     }
 
     public function mongodb(string $table): Mongodb
