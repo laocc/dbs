@@ -15,7 +15,7 @@ use esp\dbs\kernel\DbsKernel;
  *      控制器实例只会有一个，而Model不一定，所以，Pool要尽量保证在不同Model中是同一个实例对象
  *      new Pool($conf);中的$conf是包含mysql,redis等信息的数组
  */
-abstract class Dbs extends Library
+abstract class DbModel extends Library
 {
     use DbsKernel;
 
