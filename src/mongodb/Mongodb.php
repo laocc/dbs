@@ -34,6 +34,11 @@ class Mongodb
     private $_skip = 0;
     private $_limit = 0;
 
+    /**
+     * @var $pool Pool
+     */
+    private $pool;
+
     private $filter = [
         '>' => '$gt',
         '<' => '$lt',
@@ -49,6 +54,7 @@ class Mongodb
 
     public function __construct(Pool $pool, array $conf, $db = null)
     {
+        $this->pool = $pool;
         $conf += [
             'host' => '127.0.0.1',
             'port' => 27017,
@@ -81,7 +87,7 @@ class Mongodb
      * @return $this
      * MongoDB7选择库表是用[库名.表名]的方式
      */
-    public function table($table = null)
+    public function table($table = null): Mongodb
     {
         $this->_table = $this->_db . '.' . ($table ?: 'test');
         $this->_where = array();
@@ -95,7 +101,7 @@ class Mongodb
      * @param bool $batch 批量插入
      * @return array|mixed
      */
-    public function insert(array $value, $batch = false)
+    public function insert(array $value, bool $batch = false)
     {
         if (!$this->_table) throw new Error('未指定表名', 1);
         $bulk = new BulkWrite;
@@ -116,7 +122,7 @@ class Mongodb
      * @param string $action ，操作方式：$set赋值，$inc为数值增减
      * @return int
      */
-    public function update(array $value, $action = '$set')
+    public function update(array $value, string $action = '$set'): int
     {
         $bulk = new BulkWrite;
         $bulk->update($this->builder_where(), [$action => $value], ['multi' => true, 'upsert' => false]);
@@ -131,7 +137,7 @@ class Mongodb
      * @param int $limit
      * @return int
      */
-    public function delete($limit = 0)
+    public function delete(int $limit = 0): int
     {
         $bulk = new BulkWrite;
         $bulk->delete($this->builder_where(), ['limit' => $limit]);   // limit 为 0 时，删除所有匹配数据
@@ -145,7 +151,7 @@ class Mongodb
      * @param array ...$val
      * @return $this
      */
-    public function where_in($key, ...$val)
+    public function where_in($key, ...$val): Mongodb
     {
         if (is_array($val[0])) $val = $val[0];
         $this->_where[$key] = ['$in' => array_values($val)];
@@ -158,7 +164,7 @@ class Mongodb
      * @param null $val
      * @return $this
      */
-    public function where($key, $type = null, $val = null)
+    public function where($key, $type = null, $val = null): Mongodb
     {
         //直接指定全部条件
         if (is_array($key)) {
@@ -208,7 +214,7 @@ class Mongodb
      * @param string $flags
      * @return $this
      */
-    public function preg($key, $patten, string $flags = 'is')
+    public function preg($key, $patten, string $flags = 'is'): Mongodb
     {
         $this->_where[$key] = new Regex(trim($patten, '/'), $flags);
         return $this;
@@ -220,7 +226,7 @@ class Mongodb
      * @param array ...$patten
      * @return $this
      */
-    public function like($key, ...$patten)
+    public function like($key, ...$patten): Mongodb
     {
         $pnt = $this->replace_patten(implode(',', $patten));
         $this->_where[$key] = new Regex("({$pnt})", 'is');
@@ -233,7 +239,7 @@ class Mongodb
      * @return $this
      * ->where_or(['title' => $key, 'text' => ['like'=>'abc']]);
      */
-    public function where_or($array)
+    public function where_or($array): Mongodb
     {
         $or = array();
         foreach ($array as $key => &$value) {
@@ -269,13 +275,13 @@ class Mongodb
 
 
     /**
-     * @param array ...$key
+     * @param ...$key
      * @return $this
      */
-    public function select(...$key)
+    public function select(...$key): Mongodb
     {
         if ($key[0] === '*') $key = null;
-        if (is_array($key[0])) $key = $key[0];
+        else if (is_array($key[0])) $key = $key[0];
         $this->_select = $key;
         return $this;
     }
@@ -284,7 +290,7 @@ class Mongodb
      * 统计总数
      * @return int
      */
-    public function count()
+    public function count(): int
     {
         $where = $this->builder_where();
         $options = [
@@ -298,10 +304,10 @@ class Mongodb
     /**
      * @return array
      */
-    private function builder_where()
+    private function builder_where(): array
     {
         $where = $this->_where;
-        if (!$where or $where === '*' or !is_array($where)) return [];
+        if (!$where or $where == '*' or !is_array($where)) return [];
         return $where;
     }
 
@@ -310,7 +316,7 @@ class Mongodb
      * @param string $asc
      * @return $this
      */
-    public function order($key, string $asc = 'asc')
+    public function order($key, string $asc = 'asc'): Mongodb
     {
         //1=asc,-1=desc
         $sort = function ($type) {
@@ -325,13 +331,13 @@ class Mongodb
         return $this;
     }
 
-    public function skip($num)
+    public function skip($num): Mongodb
     {
         $this->_skip = intval($num);
         return $this;
     }
 
-    public function limit($num)
+    public function limit($num): Mongodb
     {
         $this->_limit = intval($num);
         return $this;
@@ -350,7 +356,7 @@ class Mongodb
      * @param null $limit
      * @return array|mixed
      */
-    public function rows($skip = 0, $limit = null)
+    public function rows(int $skip = 0, $limit = null)
     {
         return $this->get($skip, $limit);
     }
@@ -360,7 +366,7 @@ class Mongodb
      * @param null $limit
      * @return array|mixed
      */
-    public function get($skip = 0, $limit = null)
+    public function get(int $skip = 0, $limit = null)
     {
         if ($limit === null) {
             list($skip, $limit) = [0, $skip];

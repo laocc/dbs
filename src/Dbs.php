@@ -19,11 +19,17 @@ abstract class Dbs extends Library
 {
     use DbsKernel;
 
-    public function Pool(): Pool
+    public $_db_conf;
+
+    public function Pool(array $conf = null): Pool
     {
         if (is_null($this->_controller->_pool)) {
-            $conf = $this->_controller->_config->get('database');
-            $this->_controller->_pool = new Pool($conf, $this->_controller);
+            if (!empty($conf)) $this->_db_conf = $conf;
+            if (is_null($this->_db_conf)) {
+                $this->_db_conf = $this->_controller->_config->get('database');
+            }
+
+            $this->_controller->_pool = new Pool($this->_db_conf, $this->_controller);
         }
         return $this->_controller->_pool;
     }
