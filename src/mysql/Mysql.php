@@ -94,6 +94,16 @@ final class Mysql
     }
 
     /**
+     * @param bool $df
+     * @return $this
+     */
+    final public function debug_sql(bool $df): Mysql
+    {
+        $this->_debug_sql = $df;
+        return $this;
+    }
+
+    /**
      * 清除自身的一些对象变量
      */
     final public function clear_initial()

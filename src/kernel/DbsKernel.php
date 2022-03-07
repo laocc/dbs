@@ -45,6 +45,7 @@ trait DbsKernel
     private $alias = [
         'pagingSet' => 'paging',
         'pageSet' => 'paging',
+        'trans_cache' => 'delete_cache',
     ];
 
     /**
