@@ -69,7 +69,7 @@ trait DbsKernel
             case 'table':
                 return $this->Pool()->_mysql->_table;
             case 'id':
-                break;
+                return 0;
         }
 
         return null;

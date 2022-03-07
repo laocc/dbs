@@ -170,11 +170,10 @@ final class Mysql
 
     /**
      * 指定当前模型的表
-     * 或，返回当前模型对应的表名
      * @param string $table
      * @return $this
      */
-    final public function table(string $table): Mysql
+    final public function setTable(string $table): Mysql
     {
         $this->_table = $table;
         return $this;
@@ -236,6 +235,17 @@ final class Mysql
         }
 
         return $this;
+    }
+
+    /**
+     * 直接返回Builder
+     *
+     * @param string $table
+     * @return Builder
+     */
+    final public function table(string $table): Builder
+    {
+        return $this->MysqlObj(0, 1)->table($table, $this->_protect);
     }
 
     /**
