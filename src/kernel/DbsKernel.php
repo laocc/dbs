@@ -3,6 +3,7 @@
 namespace esp\dbs\kernel;
 
 use esp\dbs\mongodb\Mongodb;
+use esp\dbs\mysql\Builder;
 use esp\dbs\mysql\Mysql;
 use esp\dbs\library\Paging;
 use esp\dbs\redis\Redis;
@@ -21,6 +22,8 @@ use esp\dbs\redis\RedisHash;
  * @method Array get(...$params) 读取一条记录
  * @method Array all(...$params) 读取多条记录
  * @method Array list(...$params) 读取多条记录，分页
+ *
+ * @method bool|Builder trans(...$params) 启动一个事务
  *
  * @method Mysql select(...$params) 选择字段
  * @method Mysql join(...$params) Join表

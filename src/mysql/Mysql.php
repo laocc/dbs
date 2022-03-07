@@ -84,6 +84,16 @@ final class Mysql
     }
 
     /**
+     * @param int $trans_id
+     * @param array $batch_SQLs
+     * @return bool|Builder
+     */
+    final public function trans(int $trans_id = 1, array $batch_SQLs = [])
+    {
+        return $this->MysqlObj($trans_id)->trans($trans_id, $batch_SQLs);
+    }
+
+    /**
      * 清除自身的一些对象变量
      */
     final public function clear_initial()
