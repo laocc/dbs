@@ -47,9 +47,9 @@ final class Pool
         $this->controller = $controller;
     }
 
-    public function debug(...$args): void
+    public function debug($data, int $lev = 0): void
     {
-        $this->controller->_dispatcher->debug(...$args);
+        $this->controller->_dispatcher->debug($data, $lev + 1);
     }
 
     public function error(...$args): void
