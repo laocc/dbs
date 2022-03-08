@@ -13,9 +13,9 @@ use esp\dbs\redis\RedisHash;
 /**
  * 以下方法调用的都是Mysql中的方法，由__call转发
  *
- * @method void insert(...$params) 执行插入
- * @method void delete(...$params) 执行删除
- * @method void update(...$params) 执行更新
+ * @method int|bool|string|array insert(...$params) 执行插入
+ * @method int|bool|string|array delete(...$params) 执行删除
+ * @method int|bool|string update(...$params) 执行更新
  *
  * @method Array call(...$params) 执行存储过程
  *
@@ -25,6 +25,7 @@ use esp\dbs\redis\RedisHash;
  *
  * @method bool|Builder trans(...$params) 启动一个事务
  *
+ * @method Mysql decode(...$params) 输入解码字段
  * @method Mysql select(...$params) 选择字段
  * @method Mysql join(...$params) Join表
  *
