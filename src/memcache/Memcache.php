@@ -198,17 +198,17 @@ class Memcache implements KeyValue
      * <0   减
      * =0   获取值
      * @param string $TabKey 表名.键名，但这儿的键名要是预先定好义的
-     * @param int $incrby 可以是正数、负数，或0，=0时为读取值
+     * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $TabKey = 'count', int $incrby = 1)
+    public function counter(string $TabKey = 'count', int $incurably = 1)
     {
-        if (!is_int($incrby)) throw new Error('DB_MemCache ERROR: incrby只能是整型', 1);
+        if (!is_int($incurably)) throw new Error('DB_MemCache ERROR: incrby只能是整型', 1);
 
-        if ($incrby >= 0) {
-            return $this->conn->increment($this->table . '.' . $TabKey, $incrby);
+        if ($incurably >= 0) {
+            return $this->conn->increment($this->table . '.' . $TabKey, $incurably);
         } else {
-            return $this->conn->decrement($this->table . '.' . $TabKey, 0 - $incrby);
+            return $this->conn->decrement($this->table . '.' . $TabKey, 0 - $incurably);
         }
     }
 
@@ -217,7 +217,7 @@ class Memcache implements KeyValue
      * @param string $TabKey
      * @return bool
      */
-    public function len($TabKey = 'count')
+    public function len(string $TabKey = 'count')
     {
         return $this->counter($this->table . '.' . $TabKey, 0);
     }
@@ -230,7 +230,7 @@ class Memcache implements KeyValue
         $this->conn->close();
     }
 
-    public function ping()
+    public function ping():bool
     {
         return is_object($this->conn);
     }

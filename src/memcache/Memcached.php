@@ -116,15 +116,15 @@ class Memcached implements KeyValue
      * <0   减
      * =0   获取值
      * @param string $TabKey 键名
-     * @param int $incrby 可以是正数、负数，或0，=0时为读取值
+     * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count', int $incrby = 1, $ttl = 0)
+    public function counter(string $key = 'count', int $incurably = 1, $ttl = 0)
     {
-        if ($incrby >= 0) {
-            return $this->server->increment($key, $incrby, $ttl);
+        if ($incurably >= 0) {
+            return $this->server->increment($key, $incurably, $ttl);
         } else {
-            return $this->server->decrement($key, 0 - $incrby, $ttl);
+            return $this->server->decrement($key, 0 - $incurably, $ttl);
         }
     }
 

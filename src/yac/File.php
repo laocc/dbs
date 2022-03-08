@@ -45,7 +45,7 @@ final class File implements KeyValue
 
     /**
      * 删除key
-     * @param $key
+     * @param string ...$key
      * @return bool
      */
     public function del(string ...$key)
@@ -94,7 +94,7 @@ final class File implements KeyValue
 
     /**
      * 指定表，也就是指定键前缀
-     * @param $table
+     * @param string $table
      * @return $this
      */
     public function table(string $table)
@@ -118,10 +118,10 @@ final class File implements KeyValue
      * <0   减
      * =0   获取值
      * @param string $key 表名.键名，但这儿的键名要是预先定好义的
-     * @param int $incrby 可以是正数、负数，或0，=0时为读取值
+     * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count', int $incrby = 1)
+    public function counter(string $key = 'count', int $incurably = 1)
     {
         return true;
     }
@@ -136,7 +136,7 @@ final class File implements KeyValue
     /**
      * @return bool
      */
-    public function ping()
+    public function ping(): bool
     {
         return true;
     }

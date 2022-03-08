@@ -407,7 +407,7 @@ final class Redis implements KeyValue
      * @return mixed
      * 正常情况会返回：+PONG
      */
-    public function ping()
+    public function ping(): bool
     {
         return $this->redis->ping() === '+PONG';
     }

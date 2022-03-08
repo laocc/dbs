@@ -7,7 +7,7 @@ use Error;
 use function esp\helper\root;
 
 /**
- * Model中复用类方法
+ * Mysql() 中复用类方法
  */
 trait Helper
 {

@@ -104,14 +104,14 @@ class Yac implements KeyValue
      * <0   减
      * =0   获取值
      * @param string $TabKey 表名.键名，但这儿的键名要是预先定好义的
-     * @param int $incrby 可以是正数、负数，或0，=0时为读取值
+     * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count', int $incrby = 1)
+    public function counter(string $key = 'count', int $incurably = 1)
     {
         $val = $this->conn->get($key);
-        if ($incrby === 0) return intval($val);
-        return $this->conn->set($key, intval($val) + $incrby);
+        if ($incurably === 0) return intval($val);
+        return $this->conn->set($key, intval($val) + $incurably);
     }
 
     public function info()
@@ -132,7 +132,7 @@ class Yac implements KeyValue
     /**
      * @return bool
      */
-    public function ping()
+    public function ping(): bool
     {
         return is_object($this->conn);
     }

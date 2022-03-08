@@ -23,11 +23,11 @@ interface KeyValue
     /**
      * 存入【指定表】【行键】【行值】
      * @param string $key
-     * @param $array
+     * @param $value
      * @param int $ttl 生存期
      * @return bool
      */
-    public function set(string $key, $array, int $ttl = 0);
+    public function set(string $key, $value, int $ttl = 0);
 
 
     /**
@@ -58,10 +58,10 @@ interface KeyValue
      * <0   减
      * =0   获取值
      * @param string $key 表名.键名，但这儿的键名要是预先定好义的
-     * @param int $incrby 可以是正数、负数，或0，=0时为读取值
+     * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count', int $incrby = 1);
+    public function counter(string $key = 'count', int $incurably = 1);
 
     /**
      *  关闭
@@ -71,6 +71,6 @@ interface KeyValue
     /**
      * @return bool
      */
-    public function ping();
+    public function ping(): bool;
 
 }

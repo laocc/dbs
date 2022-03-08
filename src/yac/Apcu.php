@@ -97,17 +97,17 @@ class Apcu implements KeyValue
 
     /**
      * 计数器
-     * @param $key
-     * @param int $step
+     * @param string $key
+     * @param int $incurably
      * @param null $success 操作成功标识
-     * @return bool|int|mixed
+     * @return bool|int|void
      */
-    public function counter(string $key = 'count', int $step = 1, &$success = null)
+    public function counter(string $key = 'count', int $incurably = 1, &$success = null)
     {
-        if ($step >= 0) {
-            return apcu_inc("{$this->table}_{$key}", $step, $success);
+        if ($incurably >= 0) {
+            return apcu_inc("{$this->table}_{$key}", $incurably, $success);
         } else {
-            return apcu_dec("{$this->table}_{$key}", 0 - $step, $success);
+            return apcu_dec("{$this->table}_{$key}", 0 - $incurably, $success);
         }
     }
 
@@ -115,7 +115,7 @@ class Apcu implements KeyValue
      * 读取【指定表】的所有行键
      * @return array
      */
-    public function keys()
+    public function keys(): array
     {
         $dump = apcu_cache_info();
         $keys = array_column($dump['cache_list'], 'info');
@@ -144,7 +144,7 @@ class Apcu implements KeyValue
      * @param bool $limited
      * @return array|bool
      */
-    public function info($limited = false)
+    public function info(bool $limited = false)
     {
         return apcu_sma_info($limited);
     }
@@ -161,7 +161,7 @@ class Apcu implements KeyValue
     /**
      * @return bool
      */
-    public function ping()
+    public function ping(): bool
     {
         return true;
     }
