@@ -10,6 +10,7 @@ use esp\dbs\mysql\Cache;
 use esp\dbs\mysql\Mysql;
 use esp\dbs\library\Paging;
 use esp\dbs\redis\Redis;
+use esp\debug\Counter;
 
 final class Pool
 {
@@ -41,10 +42,17 @@ final class Pool
      */
     public $paging;
 
+    /**
+     * 计数器
+     * @var $counter Counter
+     */
+    public $counter;
+
     public function __construct(array $config, Controller $controller)
     {
-        $this->config = $config;
-        $this->controller = $controller;
+        $this->config = &$config;
+        $this->controller = &$controller;
+        $this->counter = &$controller->_counter;
     }
 
     public function debug($data, int $lev = 0): void

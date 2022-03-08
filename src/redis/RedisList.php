@@ -43,7 +43,7 @@ class RedisList
      */
     public function __construct(Redis $redis, string $key)
     {
-        $this->redis = $redis;
+        $this->redis = &$redis;
         $this->key = $key;
     }
 

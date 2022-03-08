@@ -21,7 +21,7 @@ final class Result
      */
     public function __construct(PDOStatement $result, array $count, string $sql)
     {
-        $this->rs = $result;
+        $this->rs = &$result;
         $this->sql = $sql;
         $this->count = $count['count'] ?? 0;
         unset($count['count']);

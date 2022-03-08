@@ -54,7 +54,7 @@ class Mongodb
 
     public function __construct(Pool $pool, array $conf, $db = null)
     {
-        $this->pool = $pool;
+        $this->pool = &$pool;
         $conf += [
             'host' => '127.0.0.1',
             'port' => 27017,

@@ -53,7 +53,7 @@ final class Builder
 
     public function __construct(PdoContent $mysql, bool $param, bool $lowCase, int $trans_id = 0)
     {
-        $this->_MySQL = $mysql;
+        $this->_MySQL = &$mysql;
         $this->_dim_param = $param;
         $this->_lowCase = $lowCase;
         $this->clean_builder();

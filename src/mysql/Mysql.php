@@ -6,6 +6,7 @@ namespace esp\dbs\mysql;
 use Error;
 use esp\dbs\Pool;
 use esp\dbs\library\Paging;
+use esp\debug\Counter;
 
 if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
 
@@ -53,8 +54,8 @@ final class Mysql
 
     public function __construct(Pool $pool, array $conf, string $table)
     {
+        $this->pool = &$pool;
         $this->_table = $table;
-        $this->pool = $pool;
         $this->config = $conf;
         $this->dbName = $conf['db'];
 

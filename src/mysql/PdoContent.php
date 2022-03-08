@@ -19,7 +19,6 @@ final class PdoContent
     private $transID;
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
-    private $_counter;
     private $_pool = [];//进程级的连接池，$master，$slave
     public $_error = array();//每个连接的错误信息
     public $dbName;
@@ -34,7 +33,7 @@ final class PdoContent
     public function __construct(int $tranID, array $conf, Pool $pool)
     {
         if (!is_array($conf)) throw new Error('Mysql配置信息错误', 1);
-        $this->pool = $pool;
+        $this->pool = &$pool;
         $this->_CONF = $conf + [
                 'charset' => 'utf8mb4',
                 'collation' => 'utf8mb4_general_ci',
@@ -58,9 +57,9 @@ final class PdoContent
      */
     public function counter(string $action, string $sql, int $traceLevel)
     {
-        if (!$this->_counter) return;
-        if ($traceLevel === -1) $this->_counter->recodeMysql($action, $sql);
-        $this->_counter->recodeMysql($action, $sql, $traceLevel + 1);
+        if (!$this->pool->counter) return;
+        if ($traceLevel === -1) $this->pool->counter->recodeMysql($action, $sql);
+        $this->pool->counter->recodeMysql($action, $sql, $traceLevel + 1);
     }
 
     /**
