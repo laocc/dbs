@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\dbs\yac;
+namespace esp\dbs\apcu;
 
 use esp\dbs\kernel\KeyValue;
 
@@ -15,7 +15,7 @@ class Apcu implements KeyValue
         $this->table = $table;
     }
 
-    public function table(string $table)
+    public function table(string $table): Apcu
     {
         $this->table = $table;
         return $this;
@@ -35,30 +35,31 @@ class Apcu implements KeyValue
 
     /**
      * 添加一条
-     * @param $key
-     * @param $var
+     *
+     * @param string $key
+     * @param $value
      * @param int $ttl
      * @param bool $update
-     * @return array|bool|string
+     * @return array|bool|void
      * 当$update=true:若不存在则创建
      * 当$update=false:若存在则失败
      */
-    public function set(string $key, $var, int $ttl = self::_TTL, $update = true)
+    public function set(string $key, $value, int $ttl = self::_TTL, bool $update = true)
     {
         if (is_bool($ttl)) list($ttl, $update) = [self::_TTL, $ttl];
         if ($update) {
-            return apcu_store("{$this->table}_{$key}", $var, $ttl);
+            return apcu_store("{$this->table}_{$key}", $value, $ttl);
         } else {
-            return apcu_add("{$this->table}_{$key}", $var, $ttl);
+            return apcu_add("{$this->table}_{$key}", $value, $ttl);
         }
     }
 
 
     /**
      * 读取
-     * @param $key
+     * @param string $key
      * @param null $success
-     * @return mixed
+     * @return array|bool|mixed|void
      */
     public function get(string $key, &$success = null)
     {
@@ -67,8 +68,8 @@ class Apcu implements KeyValue
 
     /**
      * 删除一个或一批值
-     * @param $key
-     * @return bool|\string[]
+     * @param string ...$keys
+     * @return bool|string[]|void
      */
     public function del(string ...$keys)
     {
@@ -153,7 +154,7 @@ class Apcu implements KeyValue
     /**
      *  关闭
      */
-    public function close()
+    public function close(): bool
     {
         return true;
     }
