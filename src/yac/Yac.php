@@ -13,9 +13,9 @@ class Yac implements KeyValue
     private $table;
     private $pool;
 
-    public function __construct(Pool $pool, string $table = null)
+    public function __construct(string $table = null)
     {
-        $this->pool = &$pool;
+//        $this->pool = &$pool;
         if ($table) $this->conn = new \Yac($table . '_');
         $this->table = $table;
     }

@@ -499,8 +499,8 @@ final class Mysql
         if ($count === true) {
             $this->pool->paging->calculate($data->count());
         } else if (is_int($count)) {
-            if ($count <= 10) {
-                $this->pool->paging->calculate(($count + ($this->pool->paging->index - 1)) * $this->pool->paging->size, true);
+            if ($count < 0) {
+                $this->pool->paging->calculate((abs($count) + ($this->pool->paging->index - 1)) * $this->pool->paging->size, true);
             } else {
                 $this->pool->paging->calculate($count);
             }
@@ -606,10 +606,10 @@ final class Mysql
      * @return $this
      *
      * $count取值：
-     * true     :执行count(1)统计总数
+     * true     :执行count()统计总数
      * 0|false  :不统计总数
-     * 1-10     :size的倍数，为了分页不至于显示0页
-     * 10以上    :为指定总数
+     * <0       :size的倍数，为了分页不至于显示0页
+     * 0以上    :为指定总数
      */
     final public function count($count = true): Mysql
     {

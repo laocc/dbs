@@ -16,7 +16,7 @@ interface KeyValue
      * 读取【指定表】的所有行键
      * @return array
      */
-    public function keys(): array;
+    public function keys();
 
 
     /**
@@ -42,7 +42,7 @@ interface KeyValue
      * @param string ...$key
      * @return bool
      */
-    public function del(string ...$key): bool;
+    public function del(string ...$key);
 
     /**
      * 清空
@@ -60,7 +60,7 @@ interface KeyValue
      * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count', int $incurably = 1): bool;
+    public function counter(string $key = 'count', int $incurably = 1);
 
     /**
      *  关闭

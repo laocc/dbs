@@ -12,9 +12,9 @@ class Apcu implements KeyValue
     private $table;
     private $pool;
 
-    public function __construct(Pool $pool, string $table)
+    public function __construct(string $table)
     {
-        $this->pool = &$pool;
+//        $this->pool = &$pool;
         $this->table = $table;
     }
 

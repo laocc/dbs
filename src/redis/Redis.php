@@ -24,9 +24,9 @@ final class Redis implements KeyValue
     private $conf;
     private $dbIndex = 0;
 
-    public function __construct(Pool $pool, array $conf, int $db = null)
+    public function __construct(array $conf, int $db = null)
     {
-        $this->pool = &$pool;
+//        $this->pool = &$pool;
         $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
 
         if (is_null($db)) $db = intval($conf['db'] ?? 1);
@@ -357,7 +357,7 @@ final class Redis implements KeyValue
      * @param string|null $filter
      * @return array
      */
-    public function keys(string $keys = null, string $filter = null)
+    public function keys(string $keys = null, string $filter = null): array
     {
         $iterator = null;
         $value = [];
@@ -387,9 +387,9 @@ final class Redis implements KeyValue
      * @param string[] ...$keys
      * @return bool|int
      */
-    public function del(string ...$keys)
+    public function del(string ...$keys): bool
     {
-        return $this->redis->del($keys);
+        return (boolean)$this->redis->del($keys);
     }
 
 
