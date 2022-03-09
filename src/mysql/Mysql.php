@@ -62,11 +62,11 @@ final class Mysql
         $this->config = $conf;
         $this->dbName = $conf['db'];
 
-        if (boolval($this->conig['cache'] ?? 0)) {
-            if (is_string($this->config['cache'])) {
-                $this->cacheHashKey = $this->config['cache'];
+        if ($conf['cache'] ?? 0) {
+            if (is_string($conf['cache'])) {
+                $this->cacheHashKey = $conf['cache'];
             } else {
-                $this->cacheHashKey = $this->config['db'];
+                $this->cacheHashKey = $conf['db'];
             }
         }
     }
@@ -350,6 +350,7 @@ final class Mysql
                 return $data;
             }
         }
+        $table = $this->_table;
 
         $obj = $mysql->table($this->_table, $this->_protect);
         if (is_int($this->columnKey)) $obj->fetch(0);
@@ -393,7 +394,7 @@ final class Mysql
         }
 
         if ($this->_cache and $this->cacheHashKey) {
-            $this->pool->cache($this->cacheHashKey)->table($this->_table)->save($where, $val);
+            $this->pool->cache($this->cacheHashKey)->table($table)->save($where, $val);
             $this->_cache = null;
         }
 

@@ -38,6 +38,7 @@ use esp\dbs\yac\Yac;
  *
  * @method bool|Builder trans(...$params) 启动一个事务
  *
+ * @method Mysql cache(...$params) 启用缓存
  * @method Mysql decode(...$params) 输入解码字段
  * @method Mysql select(...$params) 选择字段
  * @method Mysql join(...$params) Join表
