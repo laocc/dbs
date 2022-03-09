@@ -21,7 +21,7 @@ final class Pool
     /**
      * @var Controller
      */
-    private $controller;
+    public $controller;
 
     /**
      * @var $_mysql Mysql

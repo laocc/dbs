@@ -15,6 +15,9 @@ if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 
  */
 final class Mysql
 {
+    /**
+     * @var $pool Pool
+     */
     private $pool;
     private $config;
     private $cacheHashKey;
@@ -338,6 +341,12 @@ final class Mysql
             if (!empty($data)) {
                 $this->clear_initial();
                 $this->_cache = null;
+
+                if ($this->pool->counter) {
+                    $sql = "HitCache({$this->_table}) " . json_encode($where, 320);
+                    $this->pool->counter->recodeMysql('select', $sql, $this->_traceLevel + 1);
+                }
+
                 return $data;
             }
         }
