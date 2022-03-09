@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\memcache;
 
 use Error;
-use esp\dbs\kernel\KeyValue;
+use esp\dbs\library\KeyValue;
 
 /**
  * Class Memcache
@@ -51,7 +51,6 @@ class Memcached implements KeyValue
      */
     public function table(string $table)
     {
-
         $this->server->setOption(\Memcached::OPT_PREFIX_KEY, $table . '_');
         return $this;
     }
@@ -61,7 +60,7 @@ class Memcached implements KeyValue
      * @param $table
      * @return array
      */
-    public function keys()
+    public function keys(): array
     {
         return $this->server->getAllKeys();
     }
@@ -103,10 +102,13 @@ class Memcached implements KeyValue
      * @param $key
      * @return bool
      */
-    public function del(string ...$key)
+    public function del(string ...$key): bool
     {
-        if (is_array($key)) return $this->server->deleteMulti($key);
-        return $this->server->delete($key);
+        if (is_array($key)) {
+            $this->server->deleteMulti($key);
+            return true;
+        }
+        return $this->server->delete($key[0]);
     }
 
 
@@ -119,12 +121,12 @@ class Memcached implements KeyValue
      * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count', int $incurably = 1, $ttl = 0)
+    public function counter(string $key = 'count', int $incurably = 1, $ttl = 0): bool
     {
         if ($incurably >= 0) {
-            return $this->server->increment($key, $incurably, $ttl);
+            return (boolean)$this->server->increment($key, $incurably, $ttl);
         } else {
-            return $this->server->decrement($key, 0 - $incurably, $ttl);
+            return (boolean)$this->server->decrement($key, 0 - $incurably, $ttl);
         }
     }
 
@@ -140,7 +142,7 @@ class Memcached implements KeyValue
     /**
      * @return bool
      */
-    public function ping()
+    public function ping():bool
     {
         return !empty($this->server->getStats());
     }

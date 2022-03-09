@@ -4,17 +4,20 @@ declare(strict_types=1);
 namespace esp\dbs\memcache;
 
 use Error;
-use esp\dbs\kernel\KeyValue;
+use esp\dbs\library\KeyValue;
+use esp\dbs\Pool;
 
 class Memcache implements KeyValue
 {
     private $conn;
     private $table = 'Temp';
     private $host;
+    private $pool;
     const _TRY = 5;//出错时，尝试次数
 
-    public function __construct(array $conf = null, $table = null)
+    public function __construct(Pool $pool, array $conf = null, $table = null)
     {
+        $this->pool = &$pool;
         $conf += ['host' => '127.0.0.1', 'port' => 11211, 'table' => $this->table];
         $this->conn = new \Memcache();
         if (!@$this->conn->connect($conf['host'], $conf['port'])) {
@@ -41,7 +44,7 @@ class Memcache implements KeyValue
      * @param int $try
      * @return array
      */
-    public function keys($try = self::_TRY)
+    public function keys(int $try = self::_TRY): array
     {
         $all_items = $this->conn->getExtendedStats('items');
         if (!$all_items and $try > 0) {
@@ -176,7 +179,7 @@ class Memcache implements KeyValue
      * @param $key
      * @return bool
      */
-    public function del(string ...$key)
+    public function del(string ...$key): bool
     {
         $timeout = 0;//指定多久后删除
         if ($key === null) {
@@ -201,14 +204,14 @@ class Memcache implements KeyValue
      * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $TabKey = 'count', int $incurably = 1)
+    public function counter(string $TabKey = 'count', int $incurably = 1): bool
     {
         if (!is_int($incurably)) throw new Error('DB_MemCache ERROR: incrby只能是整型', 1);
 
         if ($incurably >= 0) {
-            return $this->conn->increment($this->table . '.' . $TabKey, $incurably);
+            return (boolean)$this->conn->increment($this->table . '.' . $TabKey, $incurably);
         } else {
-            return $this->conn->decrement($this->table . '.' . $TabKey, 0 - $incurably);
+            return (boolean)$this->conn->decrement($this->table . '.' . $TabKey, 0 - $incurably);
         }
     }
 
@@ -230,7 +233,7 @@ class Memcache implements KeyValue
         $this->conn->close();
     }
 
-    public function ping():bool
+    public function ping(): bool
     {
         return is_object($this->conn);
     }

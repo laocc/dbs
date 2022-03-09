@@ -4,7 +4,15 @@ declare(strict_types=1);
 namespace esp\dbs;
 
 use esp\core\Library;
-use esp\dbs\kernel\DbsKernel;
+
+use esp\dbs\mongodb\Mongodb;
+use esp\dbs\mysql\Builder;
+use esp\dbs\mysql\Mysql;
+use esp\dbs\library\Paging;
+use esp\dbs\redis\Redis;
+use esp\dbs\redis\RedisHash;
+use esp\dbs\sqlite\Sqlite;
+use esp\dbs\yac\Yac;
 
 /**
  * 非esp框架，可以自行实现此类，不需要扩展自esp\core\Library
@@ -14,24 +22,167 @@ use esp\dbs\kernel\DbsKernel;
  *      $this->_controller->_pool，建议是控制器中定义的一个变量
  *      控制器实例只会有一个，而Model不一定，所以，Pool要尽量保证在不同Model中是同一个实例对象
  *      new Pool($conf);中的$conf是包含mysql,redis等信息的数组
+ *
+ *
+ * 以下方法调用的都是Mysql中的方法，由__call转发
+ *
+ * @method int|bool|string|array insert(...$params) 执行插入
+ * @method int|bool|string|array delete(...$params) 执行删除
+ * @method int|bool|string update(...$params) 执行更新
+ *
+ * @method Array call(...$params) 执行存储过程
+ *
+ * @method Array get(...$params) 读取一条记录
+ * @method Array all(...$params) 读取多条记录
+ * @method Array list(...$params) 读取多条记录，分页
+ *
+ * @method bool|Builder trans(...$params) 启动一个事务
+ *
+ * @method Mysql decode(...$params) 输入解码字段
+ * @method Mysql select(...$params) 选择字段
+ * @method Mysql join(...$params) Join表
+ *
+ * @method Mysql paging(...$params) 设置分页
+ * @method Mysql pagingIndex(...$params) 设置分页码
+ * @method Mysql pagingSize(...$params) 设置分页每页记录数
+ *
+ * Class ModelPdo
+ * @package esp\core
  */
 abstract class DbModel extends Library
 {
-    use DbsKernel;
 
-    public $_db_conf;
+    public $_dbs_label_ = '这只是一个标识，仅用于在Library中识别这是引用自DbModel的类，并创建_pool对象';
 
-    public function Pool(array $conf = null): Pool
+    /**
+     * @var Paging $paging 分页对象，实际上这个变量是无值的的，这里定义一下，只是为了让调用的地方不显示异常，最终调用时还是要经过__get()处理
+     */
+    protected $paging;
+
+    private $alias = [
+        'pagingSet' => 'paging',
+        'pageSet' => 'paging',
+        'trans_cache' => 'delete_cache',
+    ];
+
+    /**
+     * 针对Mysql
+     *
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
+    public function __call($name, $arguments)
     {
-        if (is_null($this->_controller->_pool)) {
-            if (!empty($conf)) $this->_db_conf = $conf;
-            if (is_null($this->_db_conf)) {
-                $this->_db_conf = $this->_controller->_config->get('database');
-            }
+        if (isset($this->alias[$name])) $name = $this->alias[$name];
+        return $this->Mysql()->{$name}(...$arguments);
+    }
 
-            $this->_controller->_pool = new Pool($this->_db_conf, $this->_controller);
+    public function __get($name)
+    {
+        switch ($name) {
+            case 'paging':
+                return $this->_controller->_pool->paging;
+            case 'table':
+                return $this->_controller->_pool->_mysql->_table;
+            case 'id':
+                return 0;
         }
-        return $this->_controller->_pool;
+
+        return null;
+    }
+
+
+    public function __set($name, $value)
+    {
+        switch ($name) {
+            case 'paging':
+                $size = 10;
+                $index = 1;
+                $recode = null;
+                if (is_int($value)) $size = $value;
+                else if (is_array($value)) {
+                    $size = $value[0] ?? 10;
+                    $index = $value[1] ?? 1;
+                    $recode = $value[2] ?? null;
+                }
+                $this->_controller->_pool->paging = new Paging($size, $index, $recode);
+                break;
+            case 'index':
+                $paging = &$this->_controller->_pool->paging;
+                if (is_null($paging)) $paging = new Paging();
+                $paging->index(intval($value));
+                break;
+            case 'table':
+                $this->_controller->_pool->_mysql->_table = $value;
+                break;
+        }
+    }
+
+
+    /**
+     * @param string|null $table
+     * @return Mysql
+     */
+    public function Mysql(string $table = null): Mysql
+    {
+        if (is_null($table)) {
+            if (isset($this->_table)) $table = $this->_table;
+            if (!$table) {
+                preg_match('/(.+\\\)?(\w+)Model$/i', get_class($this), $mac);
+                if (!$mac) throw new \Error('未指定表名');
+                $table = $mac[2];
+            }
+        }
+
+        return $this->_controller->_pool->mysql($table);
+    }
+
+    /**
+     * @param string|null $table
+     * @return Mysql
+     */
+    final public function table(string $table = null): Mysql
+    {
+        return $this->_controller->_pool->mysql($table);
+    }
+
+    /**
+     * @param int $db
+     * @param int $traceLevel
+     * @return Redis
+     */
+    public function Redis(int $db = 0, int $traceLevel = 0): Redis
+    {
+        return $this->_controller->_pool->redis($db);
+    }
+
+    /**
+     * @param string $table
+     * @return RedisHash
+     */
+    public function Hash(string $table): RedisHash
+    {
+        return $this->Redis()->hash($table);
+    }
+
+    /**
+     * @param string $table
+     * @return Mongodb
+     */
+    public function Mongodb(string $table): Mongodb
+    {
+        return $this->_controller->_pool->mongodb($table);
+    }
+
+    public function sqlite(): Sqlite
+    {
+        return $this->_controller->_pool->sqlite();
+    }
+
+    public function yac(string $table): Yac
+    {
+        return $this->_controller->_pool->yac($table);
     }
 
 }

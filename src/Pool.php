@@ -5,16 +5,23 @@ namespace esp\dbs;
 
 use Error;
 use esp\core\Controller;
+use esp\dbs\apcu\Apcu;
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Cache;
 use esp\dbs\mysql\Mysql;
 use esp\dbs\library\Paging;
 use esp\dbs\redis\Redis;
+use esp\dbs\sqlite\Sqlite;
+use esp\dbs\yac\Yac;
 use esp\debug\Counter;
 
 final class Pool
 {
     public $config;
+    /**
+     * @var Controller
+     */
+    private $controller;
 
     /**
      * @var $_mysql Mysql
@@ -33,15 +40,21 @@ final class Pool
      */
     private $_mongodb;
     /**
-     * @var Controller
+     * @var $_yac Yac
      */
-    private $controller;
-
+    private $_yac;
+    /**
+     * @var $_apcu Apcu
+     */
+    private $_apcu;
+    /**
+     * @var $_sqlite Sqlite
+     */
+    private $_sqlite;
     /**
      * @var $paging Paging
      */
     public $paging;
-
     /**
      * 计数器
      * @var $counter Counter
@@ -65,7 +78,6 @@ final class Pool
         $this->controller->_dispatcher->error(...$args);
     }
 
-
     public function redis(int $dbIndex): Redis
     {
         if (is_null($this->_redis)) {
@@ -75,6 +87,14 @@ final class Pool
             return $this->_redis = new Redis($conf, $dbIndex);
         }
         return $this->_redis;
+    }
+
+    public function cache(string $hashKey): Cache
+    {
+        if (is_null($this->_cache)) {
+            $this->_cache = new Cache($this->redis(0)->redis, $hashKey);
+        }
+        return $this->_cache;
     }
 
     public function mysql(string $table): Mysql
@@ -99,12 +119,31 @@ final class Pool
         return $this->_mongodb;
     }
 
-    public function cache(string $hashKey): Cache
+    public function sqlite(): Sqlite
     {
-        if (is_null($this->_cache)) {
-            $this->_cache = new Cache($this->redis(0)->redis, $hashKey);
+        if (is_null($this->_sqlite)) {
+            $conf = $this->config['sqlite'] ?? null;
+            if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(sqlite)项');
+
+            return $this->_sqlite = new Sqlite($this, $conf);
         }
-        return $this->_cache;
+        return $this->_sqlite;
+    }
+
+    public function yac(string $table): Yac
+    {
+        if (is_null($this->_yac)) {
+            return $this->_yac = new Yac($table);
+        }
+        return $this->_yac;
+    }
+
+    public function apcu(string $table): Apcu
+    {
+        if (is_null($this->_apcu)) {
+            return $this->_apcu = new Apcu($table);
+        }
+        return $this->_apcu;
     }
 
 

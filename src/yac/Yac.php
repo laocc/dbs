@@ -3,16 +3,19 @@ declare(strict_types=1);
 
 namespace esp\dbs\yac;
 
-use esp\dbs\kernel\KeyValue;
+use esp\dbs\library\KeyValue;
+use esp\dbs\Pool;
 
 class Yac implements KeyValue
 {
     const _TTL = 0;
     private $conn;
     private $table;
+    private $pool;
 
-    public function __construct(string $table = null)
+    public function __construct(Pool $pool, string $table = null)
     {
+        $this->pool = &$pool;
         if ($table) $this->conn = new \Yac($table . '_');
         $this->table = $table;
     }
@@ -22,7 +25,7 @@ class Yac implements KeyValue
      * @param string $table
      * @return $this
      */
-    public function table(string $table)
+    public function table(string $table): Yac
     {
         $this->conn = new \Yac($table . '_');
         $this->table = $table;
@@ -34,7 +37,7 @@ class Yac implements KeyValue
      * @param $table
      * @return array
      */
-    public function keys()
+    public function keys(): array
     {
         $dump = $this->conn->dump(100000);
         $keys = array_column($dump, 'key');

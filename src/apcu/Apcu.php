@@ -3,15 +3,18 @@ declare(strict_types=1);
 
 namespace esp\dbs\apcu;
 
-use esp\dbs\kernel\KeyValue;
+use esp\dbs\library\KeyValue;
+use esp\dbs\Pool;
 
 class Apcu implements KeyValue
 {
     const _TTL = 0;
     private $table;
+    private $pool;
 
-    public function __construct($table)
+    public function __construct(Pool $pool, string $table)
     {
+        $this->pool = &$pool;
         $this->table = $table;
     }
 

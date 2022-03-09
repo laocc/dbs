@@ -5,12 +5,12 @@ namespace esp\dbs\mongodb;
 
 use Error;
 use esp\dbs\Pool;
-use \MongoDB\Driver\Manager;
-use \MongoDB\Driver\BulkWrite;
-use \MongoDB\Driver\WriteConcern;
-use \MongoDB\Driver\Query;
-use \MongoDB\BSON\ObjectID;
-use \MongoDB\BSON\Regex;
+use MongoDB\Driver\Manager;
+use MongoDB\Driver\BulkWrite;
+use MongoDB\Driver\WriteConcern;
+use MongoDB\Driver\Query;
+use MongoDB\BSON\ObjectID;
+use MongoDB\BSON\Regex;
 
 /**
  * https://www.mongodb.com/download-center#community
@@ -23,12 +23,12 @@ class Mongodb
 {
     const _TIME_OUT = 1000;
 
-    private $_conn = null;
-    private $_db = null;
-    private $_table = null;
+    private $_conn;
+    private $_db;
+    private $_table;
     private $_where = array();
     private $_order = ['_id' => -1];
-    private $_select = null;
+    private $_select;
     public $_build_where = '';
 
     private $_skip = 0;

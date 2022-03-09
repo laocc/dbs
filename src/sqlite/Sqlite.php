@@ -2,6 +2,7 @@
 
 namespace esp\dbs\sqlite;
 
+use esp\dbs\Pool;
 use PDO;
 use function esp\helper\mk_dir;
 
@@ -10,9 +11,11 @@ final class Sqlite
     private $conf;
     private $db;
     private $table;
+    private $pool;
 
-    public function __construct(array $conf)
+    public function __construct(Pool $pool, array $conf)
     {
+        $this->pool = &$pool;
         $this->conf = $conf;
         if (!isset($this->conf['db'])) throw new \Error('Sqlite库文件未指定');
 

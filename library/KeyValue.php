@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace esp\dbs\kernel;
+namespace esp\dbs\library;
 
 interface KeyValue
 {
@@ -9,7 +9,6 @@ interface KeyValue
     /**
      * 指定表，也就是指定键前缀
      * @param string $table
-     * @return $this
      */
     public function table(string $table);
 
@@ -17,7 +16,7 @@ interface KeyValue
      * 读取【指定表】的所有行键
      * @return array
      */
-    public function keys();
+    public function keys(): array;
 
 
     /**
@@ -43,7 +42,7 @@ interface KeyValue
      * @param string ...$key
      * @return bool
      */
-    public function del(string ...$key);
+    public function del(string ...$key): bool;
 
     /**
      * 清空
@@ -61,7 +60,7 @@ interface KeyValue
      * @param int $incurably 可以是正数、负数，或0，=0时为读取值
      * @return bool
      */
-    public function counter(string $key = 'count', int $incurably = 1);
+    public function counter(string $key = 'count', int $incurably = 1): bool;
 
     /**
      *  关闭
