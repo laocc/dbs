@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\dbs\redis;
 
-use esp\dbs\library\KeyValue;
 use Error;
 use esp\dbs\Pool;
+use esp\dbs\library\KeyValue;
 
 /**
  * Class Redis
@@ -93,13 +93,13 @@ final class Redis implements KeyValue
     /**
      * 重新选择库ID
      * @param int|null $db
-     * @return \Redis
+     * @return Redis
      */
-    public function select(int $db = null)
+    public function select(int $db = null): Redis
     {
         if (is_null($db)) $db = $this->dbIndex;
         $this->redis->select($db);
-        return $this->redis;
+        return $this;
     }
 
 
@@ -124,7 +124,7 @@ final class Redis implements KeyValue
      * @param string $tabName
      * @return RedisHash
      */
-    public function hash(string $tabName)
+    public function hash(string $tabName): RedisHash
     {
         if (!isset($this->tmpHash[$tabName])) {
             $this->tmpHash[$tabName] = new RedisHash($this->redis, $tabName);
@@ -132,7 +132,7 @@ final class Redis implements KeyValue
         return $this->tmpHash[$tabName];
     }
 
-    public function hGet(string $table, string $hashKey)
+    public function hGet(string $table, string $hashKey): ?string
     {
         $val = $this->redis->hGet($table, $hashKey);
         if (empty($val)) return null;
@@ -149,12 +149,12 @@ final class Redis implements KeyValue
         return $this->redis->hDel($table, ...$hashKey);
     }
 
-    public function hIncrBy(string $table, string $hashKey, int $value)
+    public function hIncrBy(string $table, string $hashKey, int $value): int
     {
         return $this->redis->hIncrBy($table, $hashKey, $value);
     }
 
-    public function hGetAlls($table)
+    public function hGetAll($table): array
     {
         return $this->redis->hGetAll($table);
     }
@@ -163,7 +163,7 @@ final class Redis implements KeyValue
      * 主机地址
      * @return array
      */
-    public function host()
+    public function host(): array
     {
         return $this->host;
     }

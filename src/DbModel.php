@@ -76,7 +76,12 @@ abstract class DbModel extends Library
     public function __call($name, $arguments)
     {
         if (isset($this->alias[$name])) $name = $this->alias[$name];
-        return $this->Mysql()->{$name}(...$arguments);
+        $mysql = $this->Mysql();
+        if (method_exists($mysql, $name) and is_callable([$mysql, $name])) {
+            return call_user_func_array([$mysql, $name], $arguments);
+        }
+
+        throw new \Error("MYSQL::{$name}() methods not exists.");
     }
 
     public function __get($name)
