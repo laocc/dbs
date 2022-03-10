@@ -12,6 +12,11 @@ use Error;
  */
 final class Builder
 {
+    /**
+     * @var $_PDO PdoContent
+     */
+    private $_PDO;
+
     private $_table = '';//使用的表名称
 
     private $_select = array();//保存已经设置的选择字符串
@@ -32,7 +37,6 @@ final class Builder
     private $_forceIndex = '';
     private $_having = '';
 
-    private $_MySQL;//Mysql
     private $_Trans_ID = 0;//多重事务ID，正常情况都=0，只有多重事务理才会大于0
 
     private $_count = false;//是否启用自动统计
@@ -51,9 +55,9 @@ final class Builder
     private $_protect = true;//默认加保护符
     private $_lowCase = false;//表名转换成小写，仅针对表名
 
-    public function __construct(PdoContent $mysql, bool $param, bool $lowCase, int $trans_id = 0)
+    public function __construct(PdoContent $pdo, bool $param, bool $lowCase, int $trans_id = 0)
     {
-        $this->_MySQL = &$mysql;
+        $this->_PDO = &$pdo;
         $this->_dim_param = $param;
         $this->_lowCase = $lowCase;
         $this->clean_builder();
@@ -114,7 +118,7 @@ final class Builder
      */
     public function commit(bool $rest = true)
     {
-        $val = $this->_MySQL->trans_commit($this->_Trans_ID);
+        $val = $this->_PDO->trans_commit($this->_Trans_ID);
         if ($rest && is_array($val)) return $val['error'];
         return $val;
     }
@@ -127,7 +131,7 @@ final class Builder
     public function back(bool $value): bool
     {
         if ($value) return false;
-        return $this->_MySQL->trans_back($this->_Trans_ID);
+        return $this->_PDO->trans_back($this->_Trans_ID);
     }
 
     /**
@@ -136,7 +140,7 @@ final class Builder
      */
     public function error(): array
     {
-        return $this->_MySQL->_error[$this->_Trans_ID];
+        return $this->_PDO->_error[$this->_Trans_ID];
     }
 
 
@@ -1249,14 +1253,21 @@ final class Builder
         $_build_sql = $this->_build_call($proName, $params);
         $option = $this->option('call');
 
-        $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
+        $get = $this->_PDO->query($_build_sql, $option, null, $tractLevel + 1);
 
         if (is_string($get)) throw new Error($get, $tractLevel + 1);
 
         return $get;
     }
 
-    public function _build_call(string $proName, array $params)
+    /**
+     * 组合执行正则表达式
+     *
+     * @param string $proName
+     * @param array $params
+     * @return string
+     */
+    public function _build_call(string $proName, array $params): string
     {
         $pmKey = [];
         foreach ($params as $k => $val) {
@@ -1289,7 +1300,7 @@ final class Builder
             $this->replace_tempTable($option['_count_sql']);
         }
 
-        $get = $this->_MySQL->query($_build_sql, $option, null, $tractLevel + 1);
+        $get = $this->_PDO->query($_build_sql, $option, null, $tractLevel + 1);
 
         if (is_string($get)) throw new Error($get, $tractLevel + 1);
 
@@ -1354,7 +1365,7 @@ final class Builder
         if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
         if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
         $sql = implode(' ', $sql);
-        return $this->_MySQL->query($sql, $this->option('delete'), null, $tractLevel + 1);
+        return $this->_PDO->query($sql, $this->option('delete'), null, $tractLevel + 1);
     }
 
 
@@ -1461,7 +1472,7 @@ final class Builder
         $value = $param ?: implode(', ', $values);
 
         $sql = "{$op} INTO {$this->_table} ({$keys}) VALUES {$value}";
-        return $this->_MySQL->query($sql, $this->option($op), null, $tractLevel + 1);
+        return $this->_PDO->query($sql, $this->option($op), null, $tractLevel + 1);
     }
 
     /**
@@ -1578,7 +1589,7 @@ final class Builder
         $sets = implode(', ', $sets);
         $sql = "UPDATE {$this->_table} SET {$sets} WHERE {$where}";
 
-        $exe = $this->_MySQL->query($sql, $this->option('update'), null, $tractLevel + 1);
+        $exe = $this->_PDO->query($sql, $this->option('update'), null, $tractLevel + 1);
 
         if (is_string($exe)) throw new Error($exe, $tractLevel + 1);
 
@@ -1629,7 +1640,7 @@ final class Builder
         }
         $sql[] = "WHERE {$where}";
 
-        return $this->_MySQL->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
+        return $this->_PDO->query(implode(' ', $sql), $this->option('update'), null, $tractLevel + 1);
     }
 
     /**

@@ -11,7 +11,11 @@ use PDOException;
 
 final class PdoContent
 {
+    /**
+     * @var $pool Pool
+     */
     private $pool;
+
     private $_CONF;//配置定义
     private $_trans_run = array();//事务状态
     private $_trans_error = array();//事务出错状态
@@ -20,6 +24,7 @@ final class PdoContent
     private $_checkGoneAway = false;
     private $_cli_print_sql = false;
     private $_pool = [];//进程级的连接池，$master，$slave
+
     public $_error = array();//每个连接的错误信息
     public $dbName;
     public $lowCase = false; //是否转换为小写

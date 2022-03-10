@@ -9,11 +9,11 @@ use esp\dbs\apcu\Apcu;
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Cache;
 use esp\dbs\mysql\Mysql;
-use esp\dbs\library\Paging;
 use esp\dbs\redis\Redis;
 use esp\dbs\sqlite\Sqlite;
 use esp\dbs\yac\Yac;
 use esp\debug\Counter;
+use esp\helper\library\Paging;
 
 final class Pool
 {

@@ -5,8 +5,7 @@ namespace esp\dbs\mysql;
 
 use Error;
 use esp\dbs\Pool;
-use esp\dbs\library\Paging;
-use esp\debug\Counter;
+use esp\helper\library\Paging;
 
 if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
 
