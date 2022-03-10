@@ -766,11 +766,11 @@ final class PdoContent
 
     /**
      * 提交事务
-     * @param $trans_id
+     * @param int $trans_id
      * @return array|bool
      * @throws Error
      */
-    public function trans_commit($trans_id)
+    public function trans_commit(int $trans_id)
     {
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
             if (!empty($this->_trans_error)) return $this->_trans_error;
@@ -784,7 +784,14 @@ final class PdoContent
             throw new Error("Trans Commit Error: 当前没有处于事务{$trans_id}中", 1);
         }
         $this->_trans_run[$trans_id] = false;
-        return $CONN->commit();
+        $commit = $CONN->commit();
+
+        !_CLI and $this->pool->debug([
+            'transID' => $trans_id,
+            'value' => $commit
+        ]);
+
+        return $commit;
     }
 
     /**

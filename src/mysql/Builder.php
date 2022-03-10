@@ -1275,7 +1275,7 @@ final class Builder
      * @param int $tractLevel
      * @return bool|int|string|null|Result
      */
-    public function get(int $row = 0, int $tractLevel = 0)
+    public function get(int $row = 0, int $tractLevel = 1)
     {
         if ($row > 0) $this->limit($row);
 
@@ -1341,7 +1341,7 @@ final class Builder
      * @return bool|int|string
      * @throws Error
      */
-    public function delete(int $tractLevel = 0)
+    public function delete(int $tractLevel = 1)
     {
         $where = $this->_build_where();
         if (empty($where)) {//禁止无where时删除数据
@@ -1367,7 +1367,7 @@ final class Builder
      * @return bool|int|string|null
      * 注：在一次插入很多记录时，不用预处理或许速度更快，若一次插入数据只有几条或十几条，这种性能损失可以忽略不计。
      */
-    public function insert(array $data, bool $is_REPLACE = false, int $tractLevel = 0)
+    public function insert(array $data, bool $is_REPLACE = false, int $tractLevel = 1)
     {
         if (empty($data)) throw new Error('DB_ERROR: 无法 insert/replace 空数据', $tractLevel + 1);
 
@@ -1487,7 +1487,7 @@ final class Builder
      * @param int $tractLevel
      * @return bool|int|null
      */
-    public function update(array $data, bool $add_identifier = true, int $tractLevel = 0)
+    public function update(array $data, bool $add_identifier = true, int $tractLevel = 1)
     {
         if (empty($data)) {
             throw new Error('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
@@ -1597,7 +1597,7 @@ final class Builder
      * 将：name=张小三改为张三，李大牛改为李四，同时将address=上海改为江苏，两者无关系。
      *
      */
-    public function update_batch(array $upData, int $tractLevel = 0)
+    public function update_batch(array $upData, int $tractLevel = 1)
     {
         if (empty($upData)) {
             throw new Error('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
