@@ -67,7 +67,7 @@ final class Redis implements KeyValue
                 $err = base64_encode(print_r($conf, true));
                 throw new Error($e->getMessage() . '/' . $err, $e->getCode(), 1, 1);
             }
-            usleep(10000);
+            usleep(1000);
             goto tryCont;
         }
         $this->host = [$conf['host'], intval($conf['port'])];
