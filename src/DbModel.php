@@ -38,6 +38,7 @@ use esp\helper\library\Paging;
  *
  * @method bool|Builder trans(...$params) 启动一个事务
  *
+ * @method Mysql query(...$params) 直接执行SQL
  * @method Mysql cache(...$params) 启用缓存
  * @method Mysql decode(...$params) 输入解码字段
  * @method Mysql select(...$params) 选择字段
@@ -73,7 +74,7 @@ abstract class DbModel extends Library
      * @param $arguments
      * @return mixed
      */
-    public function __call($name, $arguments)
+    final public function __call($name, $arguments)
     {
         if (isset($this->alias[$name])) $name = $this->alias[$name];
         $mysql = $this->Mysql();
@@ -84,7 +85,7 @@ abstract class DbModel extends Library
         throw new \Error("MYSQL::{$name}() methods not exists.");
     }
 
-    public function __get($name)
+    final public function __get($name)
     {
         switch ($name) {
             case 'paging':
@@ -99,7 +100,7 @@ abstract class DbModel extends Library
     }
 
 
-    public function __set($name, $value)
+    final public function __set($name, $value)
     {
         switch ($name) {
             case 'paging':
@@ -130,7 +131,7 @@ abstract class DbModel extends Library
      * @param string|null $table
      * @return Mysql
      */
-    public function Mysql(string $table = null): Mysql
+    final public function Mysql(string $table = null): Mysql
     {
         if (is_null($table)) {
             if (isset($this->_table)) $table = $this->_table;
@@ -158,7 +159,7 @@ abstract class DbModel extends Library
      * @param int $traceLevel
      * @return Redis
      */
-    public function Redis(int $db = 0, int $traceLevel = 0): Redis
+    final public function Redis(int $db = 0, int $traceLevel = 0): Redis
     {
         return $this->_controller->_pool->redis($db);
     }
@@ -167,7 +168,7 @@ abstract class DbModel extends Library
      * @param string $table
      * @return RedisHash
      */
-    public function Hash(string $table): RedisHash
+    final public function Hash(string $table): RedisHash
     {
         return $this->Redis()->hash($table);
     }
@@ -176,17 +177,17 @@ abstract class DbModel extends Library
      * @param string $table
      * @return Mongodb
      */
-    public function Mongodb(string $table): Mongodb
+    final public function Mongodb(string $table): Mongodb
     {
         return $this->_controller->_pool->mongodb($table);
     }
 
-    public function sqlite(): Sqlite
+    final public function sqlite(): Sqlite
     {
         return $this->_controller->_pool->sqlite();
     }
 
-    public function yac(string $table): Yac
+    final public function yac(string $table): Yac
     {
         return $this->_controller->_pool->yac($table);
     }
