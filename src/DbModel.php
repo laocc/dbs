@@ -58,6 +58,8 @@ abstract class DbModel extends Library
 
     /**
      * @var Paging $paging 分页对象，实际上这个变量是无值的的，这里定义一下，只是为了让调用的地方不显示异常，最终调用时还是要经过__get()处理
+     * 控制器中，也可以直接用：$this->_pool->paging
+     * 在Library子类中，直接用：$this->>_controller->_pool->paging
      */
     protected $paging;
 
