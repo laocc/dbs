@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace esp\dbs;
 
 use esp\core\Library;
-
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Builder;
 use esp\dbs\mysql\Mysql;
@@ -48,6 +47,9 @@ use esp\helper\library\Paging;
  * @method Mysql pagingIndex(...$params) 设置分页码
  * @method Mysql pagingSize(...$params) 设置分页每页记录数
  *
+ * @property Paging $paging 控制器或Library子类中可以直接用：$this->_pool->paging，$this->_controller->_pool->paging
+ * @property String $table 当前模块表名
+ *
  * Class ModelPdo
  * @package esp\core
  */
@@ -55,13 +57,6 @@ abstract class DbModel extends Library
 {
 
     public $_dbs_label_ = '这只是一个标识，仅用于在Library中识别这是引用自DbModel的类，并创建_pool对象';
-
-    /**
-     * @var Paging $paging 分页对象，实际上这个变量是无值的的，这里定义一下，只是为了让调用的地方不显示异常，最终调用时还是要经过__get()处理
-     * 控制器中，也可以直接用：$this->_pool->paging
-     * 在Library子类中，直接用：$this->>_controller->_pool->paging
-     */
-    protected $paging;
 
     private $alias = [
         'pagingSet' => 'paging',
