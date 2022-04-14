@@ -8,7 +8,7 @@ use \Redis;
 final class Cache
 {
     private $hashKey;
-    private $table;
+    private $table = '';
     /**
      * @var $redis Redis
      */
