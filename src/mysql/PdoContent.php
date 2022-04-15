@@ -111,7 +111,7 @@ final class PdoContent
         if (!$upData and !isset($this->_CONF['slave'])) $real = 'master';
 
         //当前缓存过该连接，直接返回
-        if (isset($this->_pool[$real][$trans_id]) and !empty($this->_pool[$real][$trans_id])) {
+        if (!$try and isset($this->_pool[$real][$trans_id]) and !empty($this->_pool[$real][$trans_id])) {
             return $this->_pool[$real][$trans_id];
         }
 
@@ -348,14 +348,14 @@ final class PdoContent
 
         //连接数据库，自动选择主从库
         if (!$CONN) {
-            if (isset($this->_pool[$real][$transID]) and !empty($this->_pool[$real][$transID])) {
+            if (!$try and isset($this->_pool[$real][$transID]) and !empty($this->_pool[$real][$transID])) {
                 $CONN = $this->_pool[$real][$transID];
             } else {
                 $CONN = $this->connect($upData, $transID, $traceLevel + 1, $try);
             }
         }
 
-        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN, $try++)) {
+        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN, $try)) {
             echo "MysqlPDO has gone away, try Now!\n";
             goto tryExe;
         }
