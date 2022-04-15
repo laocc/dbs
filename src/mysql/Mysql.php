@@ -750,11 +750,7 @@ final class Mysql
      */
     public function force($index): Mysql
     {
-        if (empty($index)) return $this;
-        if (is_string($index)) $index = explode(',', $index);
-        $new = array_merge($this->forceIndex, $index);
-        $this->forceIndex = array_unique($new);
-        return $this;
+        return $this->index($index);
     }
 
     /**
@@ -767,7 +763,7 @@ final class Mysql
         if (empty($index)) return $this;
         if (is_string($index)) $index = explode(',', $index);
         $new = array_merge($this->forceIndex, $index);
-        $this->forceIndex = array_unique($new);
+        $this->forceIndex = array_diff(array_unique($new), ['']);
         return $this;
     }
 
