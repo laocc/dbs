@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace esp\dbs;
 
 use esp\core\Library;
-
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Builder;
 use esp\dbs\mysql\Mysql;
@@ -38,6 +37,7 @@ use esp\helper\library\Paging;
  *
  * @method bool|Builder trans(...$params) 启动一个事务
  *
+ * @method Mysql query(...$params) 直接执行SQL
  * @method Mysql cache(...$params) 启用缓存
  * @method Mysql decode(...$params) 输入解码字段
  * @method Mysql select(...$params) 选择字段
@@ -47,6 +47,9 @@ use esp\helper\library\Paging;
  * @method Mysql pagingIndex(...$params) 设置分页码
  * @method Mysql pagingSize(...$params) 设置分页每页记录数
  *
+ * @property Paging $paging 控制器或Library子类中可以直接用：$this->_pool->paging，$this->_controller->_pool->paging
+ * @property String $table 当前模块表名
+ *
  * Class ModelPdo
  * @package esp\core
  */
@@ -54,11 +57,6 @@ abstract class DbModel extends Library
 {
 
     public $_dbs_label_ = '这只是一个标识，仅用于在Library中识别这是引用自DbModel的类，并创建_pool对象';
-
-    /**
-     * @var Paging $paging 分页对象，实际上这个变量是无值的的，这里定义一下，只是为了让调用的地方不显示异常，最终调用时还是要经过__get()处理
-     */
-    protected $paging;
 
     private $alias = [
         'pagingSet' => 'paging',
@@ -73,7 +71,7 @@ abstract class DbModel extends Library
      * @param $arguments
      * @return mixed
      */
-    public function __call($name, $arguments)
+    final public function __call($name, $arguments)
     {
         if (isset($this->alias[$name])) $name = $this->alias[$name];
         $mysql = $this->Mysql();
@@ -84,7 +82,7 @@ abstract class DbModel extends Library
         throw new \Error("MYSQL::{$name}() methods not exists.");
     }
 
-    public function __get($name)
+    final public function __get($name)
     {
         switch ($name) {
             case 'paging':
@@ -99,7 +97,7 @@ abstract class DbModel extends Library
     }
 
 
-    public function __set($name, $value)
+    final public function __set($name, $value)
     {
         switch ($name) {
             case 'paging':
@@ -130,7 +128,7 @@ abstract class DbModel extends Library
      * @param string|null $table
      * @return Mysql
      */
-    public function Mysql(string $table = null): Mysql
+    final public function Mysql(string $table = null): Mysql
     {
         if (is_null($table)) {
             if (isset($this->_table)) $table = $this->_table;
@@ -158,7 +156,7 @@ abstract class DbModel extends Library
      * @param int $traceLevel
      * @return Redis
      */
-    public function Redis(int $db = 0, int $traceLevel = 0): Redis
+    final public function Redis(int $db = 0, int $traceLevel = 0): Redis
     {
         return $this->_controller->_pool->redis($db);
     }
@@ -167,7 +165,7 @@ abstract class DbModel extends Library
      * @param string $table
      * @return RedisHash
      */
-    public function Hash(string $table): RedisHash
+    final public function Hash(string $table): RedisHash
     {
         return $this->Redis()->hash($table);
     }
@@ -176,17 +174,17 @@ abstract class DbModel extends Library
      * @param string $table
      * @return Mongodb
      */
-    public function Mongodb(string $table): Mongodb
+    final public function Mongodb(string $table): Mongodb
     {
         return $this->_controller->_pool->mongodb($table);
     }
 
-    public function sqlite(): Sqlite
+    final public function sqlite(): Sqlite
     {
         return $this->_controller->_pool->sqlite();
     }
 
-    public function yac(string $table): Yac
+    final public function yac(string $table): Yac
     {
         return $this->_controller->_pool->yac($table);
     }

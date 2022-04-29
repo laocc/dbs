@@ -1166,7 +1166,7 @@ final class Builder
 
     public function force(array $index): Builder
     {
-        $this->_forceIndex = implode(',', $index);
+        $this->_forceIndex = trim(implode(',', $index), ',');
         return $this;
     }
 

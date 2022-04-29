@@ -91,7 +91,7 @@ final class Mysql
      * @param array $batch_SQLs
      * @return bool|Builder
      */
-    final public function trans(int $trans_id = 1, array $batch_SQLs = [])
+    public function trans(int $trans_id = 1, array $batch_SQLs = [])
     {
         return $this->MysqlObj($trans_id)->trans($trans_id, $batch_SQLs);
     }
@@ -100,7 +100,7 @@ final class Mysql
      * @param bool $df
      * @return $this
      */
-    final public function debug_sql(bool $df): Mysql
+    public function debug_sql(bool $df): Mysql
     {
         $this->_debug_sql = $df;
         return $this;
@@ -109,7 +109,7 @@ final class Mysql
     /**
      * 清除自身的一些对象变量
      */
-    final public function clear_initial()
+    public function clear_initial()
     {
         //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
         $this->_table = null;
@@ -163,7 +163,7 @@ final class Mysql
      * @param void $run
      * @return $this
      */
-    final public function cache($run = null): Mysql
+    public function cache($run = null): Mysql
     {
         if (is_null($run)) $run = true;
         $this->_cache = $run;
@@ -176,7 +176,7 @@ final class Mysql
      * @param string $table
      * @return $this
      */
-    final public function setTable(string $table): Mysql
+    public function setTable(string $table): Mysql
     {
         $this->_table = $table;
         return $this;
@@ -210,7 +210,7 @@ final class Mysql
      * @return int|null
      * @throws Error
      */
-    final public function insert(array $data, bool $full = false, bool $replace = false)
+    public function insert(array $data, bool $full = false, bool $replace = false)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $mysql = $this->MysqlObj(0, 1);
@@ -229,7 +229,7 @@ final class Mysql
      * @return $this
      * @throws Error
      */
-    final public function delete_cache(string $table, array $where): Mysql
+    public function delete_cache(string $table, array $where): Mysql
     {
         if ($this->_cache and $this->cacheHashKey) {
             if (is_array($this->_cache)) $where += $this->_cache;
@@ -246,7 +246,7 @@ final class Mysql
      * @param string $table
      * @return Builder
      */
-    final public function table(string $table): Builder
+    public function table(string $table): Builder
     {
         return $this->MysqlObj(0, 1)->table($table, $this->_protect);
     }
@@ -257,7 +257,7 @@ final class Mysql
      * @return bool|int|string
      * @throws Error
      */
-    final public function delete($where)
+    public function delete($where)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         if (is_numeric($where)) {
@@ -280,7 +280,7 @@ final class Mysql
      * @return bool|null
      * @throws Error
      */
-    final public function update($where, array $data)
+    public function update($where, array $data)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         if (is_numeric($where)) {
@@ -304,7 +304,7 @@ final class Mysql
      * @param array $params
      * @return array|mixed|null
      */
-    final public function call(string $proName, array $params)
+    public function call(string $proName, array $params)
     {
         $mysql = $this->MysqlObj(0, 1);
         $call = $mysql->procedure($proName, $params, $this->_traceLevel + 1);
@@ -321,13 +321,24 @@ final class Mysql
 
 
     /**
+     * 直接执行一条sql
+     *
+     * @param string $sql
+     * @return bool|Result|int|string|null
+     */
+    final  public function query(string $sql)
+    {
+        return $this->MysqlObj(0, 1)->query($sql);
+    }
+
+    /**
      * 选择一条记录
      * @param $where
      * @param string|null $orderBy
      * @param string $sort
      * @return mixed|null
      */
-    final public function get($where, string $orderBy = null, string $sort = 'asc')
+    public function get($where, string $orderBy = null, string $sort = 'asc')
     {
         $mysql = $this->MysqlObj(0, 1);
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
@@ -408,7 +419,7 @@ final class Mysql
      * @param int $limit
      * @return array
      */
-    final public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
+    public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect)->prepare();
@@ -458,7 +469,7 @@ final class Mysql
      * @return array|mixed|null
      * @throws Error
      */
-    final public function list($where = null, $orderBy = null, string $sort = 'desc')
+    public function list($where = null, $orderBy = null, string $sort = 'desc')
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect);
@@ -520,7 +531,7 @@ final class Mysql
         return $data->rows(0, null, $_decode);
     }
 
-    final public function having(string $filter): Mysql
+    public function having(string $filter): Mysql
     {
         $this->_having = $filter;
         return $this;
@@ -531,7 +542,7 @@ final class Mysql
      * @param string $string
      * @return false|string
      */
-    final public function gz(string $string)
+    public function gz(string $string)
     {
         try {
             return gzcompress($string, 5);
@@ -545,7 +556,7 @@ final class Mysql
      * @param string $string
      * @return false|string
      */
-    final public function ugz(string $string)
+    public function ugz(string $string)
     {
         try {
             return gzuncompress($string);
@@ -554,7 +565,7 @@ final class Mysql
         }
     }
 
-    final public function decode(string $cols, string $type = 'json'): Mysql
+    public function decode(string $cols, string $type = 'json'): Mysql
     {
         if (!isset($this->_decode[$type])) $this->_decode[$type] = [];
         array_push($this->_decode[$type], ...array_map(function ($col) {
@@ -570,7 +581,7 @@ final class Mysql
      * @param null $lat
      * @return string
      */
-    final public function point($lng, $lat = null): string
+    public function point($lng, $lat = null): string
     {
         if (is_null($lat) and is_array($lng)) {
             $lat = $lng['lat'] ?? ($lng[1] ?? 0);
@@ -585,7 +596,7 @@ final class Mysql
      * @return string
      * @throws Error
      */
-    final public function polygon(array $location): string
+    public function polygon(array $location): string
     {
         if (count($location) < 3) throw new Error("空间区域至少需要3个点");
         $val = [];
@@ -602,7 +613,7 @@ final class Mysql
 
     private $sumKey = null;
 
-    final public function sum(string $sumKey): Mysql
+    public function sum(string $sumKey): Mysql
     {
         $this->sumKey = $sumKey;
         $this->_count = true;
@@ -620,7 +631,7 @@ final class Mysql
      * <0       :size的倍数，为了分页不至于显示0页
      * 0以上    :为指定总数
      */
-    final public function count($count = true): Mysql
+    public function count($count = true): Mysql
     {
         $this->_count = $count;
         if ($count === 0) $this->_count = false;
@@ -632,7 +643,7 @@ final class Mysql
      * @param bool $protect
      * @return $this
      */
-    final public function protect(bool $protect): Mysql
+    public function protect(bool $protect): Mysql
     {
         $this->_protect = $protect;
         return $this;
@@ -643,13 +654,13 @@ final class Mysql
      * @param bool $bool
      * @return $this
      */
-    final public function distinct(bool $bool = true): Mysql
+    public function distinct(bool $bool = true): Mysql
     {
         $this->_distinct = $bool;
         return $this;
     }
 
-    final public function paging(int $size, int $index = 0, int $recode = null): Mysql
+    public function paging(int $size, int $index = 0, int $recode = null): Mysql
     {
         if (is_null($this->pool->paging)) {
             $this->pool->paging = new Paging($size, $index, $recode);
@@ -659,13 +670,13 @@ final class Mysql
         return $this;
     }
 
-    final public function pagingIndex(int $index): Mysql
+    public function pagingIndex(int $index): Mysql
     {
         $this->pool->paging->index($index);
         return $this;
     }
 
-    final public function pagingSize(int $size): Mysql
+    public function pagingSize(int $size): Mysql
     {
         $this->pool->paging->size($size);
         return $this;
@@ -675,7 +686,7 @@ final class Mysql
      * @param string $string
      * @return mixed
      */
-    final public function quote(string $string)
+    public function quote(string $string)
     {
         return $this->MysqlObj(0, 1)->quote($string);
     }
@@ -683,7 +694,7 @@ final class Mysql
     /**
      * 断开所有链接，
      */
-    final public function close(): void
+    public function close(): void
     {
         $branchName = $this->_branch ?? 'auto';
         $mysql = $this->_MysqlPool[$branchName];
@@ -691,7 +702,7 @@ final class Mysql
     }
 
 
-    final public function join(...$data): Mysql
+    public function join(...$data): Mysql
     {
         if (empty($data)) {
             $this->tableJoin = array();
@@ -701,7 +712,7 @@ final class Mysql
         return $this;
     }
 
-    final public function group(string $groupKey, bool $only = false): Mysql
+    public function group(string $groupKey, bool $only = false): Mysql
     {
         if ($only) $this->columnKey = 0;
         $this->groupKey = $groupKey;
@@ -714,7 +725,7 @@ final class Mysql
      * @param string $field
      * @return $this
      */
-    final public function field(string $field): Mysql
+    public function field(string $field): Mysql
     {
         $this->columnKey = 0;
         $this->selectKey = [[$field, true]];
@@ -726,7 +737,7 @@ final class Mysql
      * @param int $field
      * @return $this
      */
-    final public function column(int $field = 0): Mysql
+    public function column(int $field = 0): Mysql
     {
         $this->columnKey = $field;
         return $this;
@@ -737,13 +748,9 @@ final class Mysql
      * @param $index
      * @return $this
      */
-    final public function force($index): Mysql
+    public function force($index): Mysql
     {
-        if (empty($index)) return $this;
-        if (is_string($index)) $index = explode(',', $index);
-        $new = array_merge($this->forceIndex, $index);
-        $this->forceIndex = array_unique($new);
-        return $this;
+        return $this->index($index);
     }
 
     /**
@@ -751,12 +758,12 @@ final class Mysql
      * @param  $index
      * @return $this
      */
-    final public function index($index): Mysql
+    public function index($index): Mysql
     {
         if (empty($index)) return $this;
         if (is_string($index)) $index = explode(',', $index);
         $new = array_merge($this->forceIndex, $index);
-        $this->forceIndex = array_unique($new);
+        $this->forceIndex = array_diff(array_unique($new), ['']);
         return $this;
     }
 
@@ -768,7 +775,7 @@ final class Mysql
      * @param bool $addProtect
      * @return $this
      */
-    final public function order($key, string $sort = 'asc', bool $addProtect = null): Mysql
+    public function order($key, string $sort = 'asc', bool $addProtect = null): Mysql
     {
         if (is_array($key)) {
             foreach ($key as $ks) {
@@ -791,7 +798,7 @@ final class Mysql
      * @return $this
      * @throws Error
      */
-    final public function select($select, $add_identifier = null): Mysql
+    public function select($select, $add_identifier = null): Mysql
     {
         if (is_int($add_identifier)) {
             //当$add_identifier是整数时，表示返回第x列数据

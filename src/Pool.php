@@ -68,14 +68,14 @@ final class Pool
         $this->counter = &$controller->_counter;
     }
 
-    public function debug($data, int $lev = 0): void
+    public function debug($data, int $lev = 1): void
     {
         $this->controller->_dispatcher->debug($data, $lev + 1);
     }
 
-    public function error(...$args): void
+    public function error($data, int $lev = 1): void
     {
-        $this->controller->_dispatcher->error(...$args);
+        $this->controller->_dispatcher->error($data, $lev + 1);
     }
 
     public function redis(int $dbIndex): Redis

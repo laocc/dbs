@@ -8,7 +8,7 @@ use \Redis;
 final class Cache
 {
     private $hashKey;
-    private $table;
+    private $table = '';
     /**
      * @var $redis Redis
      */
@@ -32,13 +32,14 @@ final class Cache
 
     public function get(string $key)
     {
-        return $this->redis->hGet($this->hashKey, $key);
+        $mdKey = ($this->table . '_' . $key);
+        return $this->redis->hGet($this->hashKey, $mdKey);
     }
-
 
     public function set(string $key, $value)
     {
-        return $this->redis->hSet($this->hashKey, $key, $value);
+        $mdKey = ($this->table . '_' . $key);
+        return $this->redis->hSet($this->hashKey, $mdKey, $value);
     }
 
 
