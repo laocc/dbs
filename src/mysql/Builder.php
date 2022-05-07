@@ -608,6 +608,10 @@ final class Builder
                     if ($this->_param) {//采用占位符后置内容方式
                         if ($value === 0) {
                             $_where = "({$fieldPro} = 0 )";
+                        } else if ($in === '=0') {
+                            $key = $this->paramKey($field);
+                            $this->_param_data[$key] = $value;
+                            $_where = "({$fieldPro} =0 or ({$fieldPro} & {$key})=0)";
                         } else {
                             $key = $this->paramKey($field);
                             $this->_param_data[$key] = $value;
@@ -616,6 +620,8 @@ final class Builder
                     } else {
                         if ($value === 0) {
                             $_where = "({$fieldPro} = 0 )";
+                        } else if ($in === '=0') {
+                            $_where = "({$fieldPro} =0 or ({$fieldPro} & " . $this->quote($value) . ")=0)";
                         } else {
                             $_where = "({$fieldPro} >0 and ({$fieldPro} & " . $this->quote($value) . "){$in})";
                         }
