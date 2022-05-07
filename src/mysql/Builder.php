@@ -1046,14 +1046,14 @@ final class Builder
     /**
      * 创建一个联合查询
      * @param string $table 要联查的表的名称
-     * @param null $_filter 条件
-     * @param string|null $select 选择字段
+     * @param string|array 条件
+     * @param string $select 选择字段
      * @param string $method 联查的类型，默认是NULL，可选值为'left','right','inner','outer','full','using'
      * @param bool $identifier 是否加保护符
      * @return $this
      * @throws Error
      */
-    public function join(string $table, $_filter, string $select = null, string $method = 'left', bool $identifier = true): Builder
+    public function join(string $table, $_filter, string $select = '*', string $method = 'left', bool $identifier = true): Builder
     {
         $method = strtoupper($method);
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
@@ -1097,13 +1097,11 @@ final class Builder
         } else {
             $this->_join[] = " {$method} JOIN {$table} ON ({$_filter_str}) ";
         }
-        if (!is_null($select)) {
-            if ($select === '*') {
-                $this->_join_select[] = "{$table}.*";
-            } else {
-                $this->_join_select[] = $select;
-            }
-        }
+
+        if (is_null($select)) $select = '*';
+        if ($select === '*') $select = "{$table}.*";
+        $this->_join_select[] = $select;
+
         return $this;
     }
 
