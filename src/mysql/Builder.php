@@ -1103,7 +1103,8 @@ final class Builder
         } else {
             $this->_join[] = " {$method} JOIN {$table} ON ({$_filter_str}) ";
         }
-
+        
+        if ($select === '') return $this;
         if (is_null($select)) $select = '*';
         if ($select === '*') $select = "{$table}.*";
         $this->_join_select[] = $select;
