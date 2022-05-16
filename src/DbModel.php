@@ -34,6 +34,8 @@ use esp\helper\library\Paging;
  * @method Array get(...$params) 读取一条记录
  * @method Array all(...$params) 读取多条记录
  * @method Array list(...$params) 读取多条记录，分页
+ * @method Array count(...$params) 统计总数
+ * @method Array rand(...$params) 随机取x条
  *
  * @method bool|Builder trans(...$params) 启动一个事务
  *

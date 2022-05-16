@@ -160,7 +160,7 @@ final class Mysql
      * $this->delete(['artID'=>11]);              不删除，因为没指定
      *
      *
-     * @param void $run
+     * @param null $run
      * @return $this
      */
     public function cache($run = null): Mysql
@@ -463,6 +463,34 @@ final class Mysql
     }
 
     /**
+     * 统计总数
+     *
+     * @param array $where
+     * @return int
+     */
+    public function count($where = []): int
+    {
+        $this->selectKey = [['count(1) as c', false]];
+        $dbs = $this->get($where);
+        if (empty($dbs)) return 0;
+        return intval($dbs['c'] ?? 0);
+    }
+
+    /**
+     * 取随机几条
+     *
+     * @param array $where
+     * @param int $limit
+     * @return array
+     */
+    public function rand($where = [], int $limit = 1): array
+    {
+        $dbs = $this->all($where, 'RAND', 'asc', $limit);
+        if (empty($dbs)) return [];
+        return $dbs;
+    }
+
+    /**
      * @param null $where
      * @param null $orderBy
      * @param string $sort
@@ -613,6 +641,12 @@ final class Mysql
 
     private $sumKey = null;
 
+    /**
+     * 统计某几个字段的和值
+     *
+     * @param string $sumKey
+     * @return $this
+     */
     public function sum(string $sumKey): Mysql
     {
         $this->sumKey = $sumKey;
@@ -631,7 +665,7 @@ final class Mysql
      * <0       :size的倍数，为了分页不至于显示0页
      * 0以上    :为指定总数
      */
-    public function count($count = true): Mysql
+    public function do_count($count = true): Mysql
     {
         $this->_count = $count;
         if ($count === 0) $this->_count = false;
