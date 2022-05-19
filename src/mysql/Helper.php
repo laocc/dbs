@@ -152,11 +152,19 @@ trait Helper
 
     /**
      * 根据数据库中的表，创建相应的模型
-     * @return string|array
+     * @param string $class
+     * @return array|string
+     *
+     * $class = get_parent_class($modMain)
+     * 也就是任何一个已存在的Model实例的命名空间路径
+     * 这里所创建的model和该实例在同一目录
+     * 调用： $model->createModel(get_parent_class($model))
+     *
      */
-    final public function createModel()
+    final public function createModel(string $class)
     {
-        $self = explode('\\', get_parent_class($this));
+//        $self = explode('\\', get_parent_class($this));
+        $self = explode('\\', $class);
         $parent = array_pop($self);
         if ($parent === 'Model') return 'Model实例应该有个中间类，比如_Base，不应该直接引自Model类，若确需这样，请手工创建。';
         if (empty($self)) return 'Model实例应该引用自Model>_Base';
