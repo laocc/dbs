@@ -145,6 +145,17 @@ abstract class DbModel extends Library
     }
 
     /**
+     * 释放链接
+     *
+     * @param string|null $db
+     * @return Bool
+     */
+    final public function release(string $db = 'mysql'): Bool
+    {
+        return $this->_controller->_pool->release($db);
+    }
+
+    /**
      * @param string|null $table
      * @return Mysql
      */

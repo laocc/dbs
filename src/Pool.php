@@ -78,23 +78,35 @@ final class Pool
         $this->controller->_dispatcher->error($data, $lev + 1);
     }
 
-    public function redis(int $dbIndex): Redis
-    {
-        if (is_null($this->_redis)) {
-            $conf = $this->config['redis'] ?? null;
-            if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(redis)项');
-
-            return $this->_redis = new Redis($conf, $dbIndex);
-        }
-        return $this->_redis;
-    }
-
     public function cache(string $hashKey): Cache
     {
         if (is_null($this->_cache)) {
             $this->_cache = new Cache($this->redis(0)->redis, $hashKey);
         }
         return $this->_cache;
+    }
+
+    /**
+     * 释放链接
+     *
+     * @param string $db
+     * @return bool
+     */
+    public function release(string $db): bool
+    {
+        switch ($db) {
+            case 'mysql':
+                $this->_mysql = null;
+                break;
+            case 'redis':
+                $this->_redis = null;
+                break;
+            case 'mongodb':
+                $this->_mongodb = null;
+                break;
+        }
+        $this->debug("释放链接-{$db}");
+        return true;
     }
 
     public function mysql(string $table): Mysql
@@ -106,6 +118,17 @@ final class Pool
             return $this->_mysql = new Mysql($this, $conf, $table);
         }
         return $this->_mysql->setTable($table);
+    }
+
+    public function redis(int $dbIndex): Redis
+    {
+        if (is_null($this->_redis)) {
+            $conf = $this->config['redis'] ?? null;
+            if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(redis)项');
+
+            return $this->_redis = new Redis($conf, $dbIndex);
+        }
+        return $this->_redis;
     }
 
     public function mongodb(string $table): Mongodb
