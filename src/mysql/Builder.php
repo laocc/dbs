@@ -1103,7 +1103,7 @@ final class Builder
         } else {
             $this->_join[] = " {$method} JOIN {$table} ON ({$_filter_str}) ";
         }
-        
+
         if ($select === '') return $this;
         if (is_null($select)) $select = '*';
         if ($select === '*') $select = "{$table}.*";
@@ -1505,9 +1505,8 @@ final class Builder
      */
     public function update(array $data, bool $add_identifier = true, int $tractLevel = 1)
     {
-        if (empty($data)) {
-            throw new Error('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
-        }
+        if (empty($data)) throw new Error('DB_ERROR: 不能 update 空数据', $tractLevel + 1);
+
         $sets = array();
         foreach ($data as $key => &$value) {
             if (is_int($key)) {
@@ -1540,9 +1539,9 @@ final class Builder
 
             } elseif (in_array($kFH, ['+', '-', '|', '&', '$'])) { //键以+-结束，或以|&结束的位运算
                 $key = substr($key, 0, -1);
-                if (!is_numeric($value)) {
-                    throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
-                }
+                if (!is_numeric($value)) throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
+                if ($value < 0) throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为非负数", $tractLevel + 1);
+
                 if ($kFH === '$') {
                     //位运算：减法，值为自己先异或value
                     $value = $this->protect_identifier($key) . " - ({$key} & {$value})";
