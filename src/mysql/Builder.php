@@ -1415,10 +1415,9 @@ final class Builder
                             $valKey[] = ":{$k}";
                             break;
 
-                        case '\\': //直接表达式
+                        case '\\': //直接表达式，直接给出表达式，不通过占位符
                             $k = substr($k, 0, -1);
-                            $nv[":{$k}"] = $v;
-                            $valKey[] = ":{$k}";
+                            $valKey[] = $v;
                             break;
 
                         case '@'://空间位置数据
