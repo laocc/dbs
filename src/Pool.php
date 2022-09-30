@@ -17,49 +17,18 @@ use esp\helper\library\Paging;
 
 final class Pool
 {
-    public $config;
-    /**
-     * @var Controller
-     */
-    public $controller;
+    public array $config;
+    public Controller $controller;
+    public Mysql $_mysql;
+    public Paging $paging;
+    public Counter $counter;
 
-    /**
-     * @var $_mysql Mysql
-     */
-    public $_mysql;
-    /**
-     * @var $_cache Cache
-     */
-    private $_cache;
-    /**
-     * @var $_redis Redis
-     */
-    private $_redis;
-    /**
-     * @var $_mongodb Mongodb
-     */
-    private $_mongodb;
-    /**
-     * @var $_yac Yac
-     */
-    private $_yac;
-    /**
-     * @var $_apcu Apcu
-     */
-    private $_apcu;
-    /**
-     * @var $_sqlite Sqlite
-     */
-    private $_sqlite;
-    /**
-     * @var $paging Paging
-     */
-    public $paging;
-    /**
-     * 计数器
-     * @var $counter Counter
-     */
-    public $counter;
+    private Cache $_cache;
+    private Redis $_redis;
+    private Mongodb $_mongodb;
+    private Yac $_yac;
+    private Apcu $_apcu;
+    private Sqlite $_sqlite;
 
     public function __construct(array $config, Controller $controller)
     {
@@ -78,14 +47,6 @@ final class Pool
         $this->controller->_dispatcher->error($data, $lev + 1);
     }
 
-    public function cache(string $hashKey): Cache
-    {
-        if (is_null($this->_cache)) {
-            $this->_cache = new Cache($this->redis(0)->redis, $hashKey);
-        }
-        return $this->_cache;
-    }
-
     /**
      * 释放链接
      *
@@ -96,77 +57,74 @@ final class Pool
     {
         switch ($db) {
             case 'mysql':
-                $this->_mysql = null;
+                unset($this->_mysql);
                 break;
             case 'redis':
-                $this->_redis = null;
+                unset($this->_redis);
                 break;
             case 'mongodb':
-                $this->_mongodb = null;
+                unset($this->_mongodb);
                 break;
         }
         $this->debug("释放链接-{$db}");
         return true;
     }
 
+    public function cache(string $hashKey): Cache
+    {
+        if (isset($this->_cache)) return $this->_cache;
+        return $this->_cache = new Cache($this->redis(0)->redis, $hashKey);
+    }
+
     public function mysql(string $table): Mysql
     {
-        if (is_null($this->_mysql)) {
-            $conf = $this->config['mysql'] ?? null;
-            if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mysql)项');
+        if (isset($this->_mysql)) return $this->_mysql->setTable($table);
 
-            return $this->_mysql = new Mysql($this, $conf, $table);
-        }
-        return $this->_mysql->setTable($table);
+        $conf = $this->config['mysql'] ?? null;
+        if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mysql)项');
+
+        return $this->_mysql = (new Mysql($this, $conf, $table))->setTable($table);
     }
 
     public function redis(int $dbIndex): Redis
     {
-        if (is_null($this->_redis)) {
-            $conf = $this->config['redis'] ?? null;
-            if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(redis)项');
+        if (isset($this->_redis)) return $this->_redis;
+        $conf = $this->config['redis'] ?? null;
+        if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(redis)项');
 
-            return $this->_redis = new Redis($conf, $dbIndex);
-        }
-        return $this->_redis;
+        return $this->_redis = new Redis($conf, $dbIndex);
     }
 
     public function mongodb(string $table): Mongodb
     {
-        if (is_null($this->_mongodb)) {
-            $conf = $this->config['mongodb'] ?? null;
-            if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mongodb)项');
+        if (isset($this->_mongodb)) return $this->_mongodb;
 
-            return $this->_mongodb = new Mongodb($this, $conf, $table);
-        }
-        return $this->_mongodb;
+        $conf = $this->config['mongodb'] ?? null;
+        if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mongodb)项');
+
+        return $this->_mongodb = new Mongodb($this, $conf, $table);
     }
 
     public function sqlite(): Sqlite
     {
-        if (is_null($this->_sqlite)) {
-            $conf = $this->config['sqlite'] ?? null;
-            if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(sqlite)项');
+        if (isset($this->_sqlite)) return $this->_sqlite;
 
-            return $this->_sqlite = new Sqlite($this, $conf);
-        }
-        return $this->_sqlite;
+        $conf = $this->config['sqlite'] ?? null;
+        if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(sqlite)项');
+
+        return $this->_sqlite = new Sqlite($this, $conf);
     }
 
     public function yac(string $table): Yac
     {
-        if (is_null($this->_yac)) {
-            return $this->_yac = new Yac($table);
-        }
-        return $this->_yac;
+        if (isset($this->_yac)) return $this->_yac;
+        return $this->_yac = new Yac($table);
     }
 
     public function apcu(string $table): Apcu
     {
-        if (is_null($this->_apcu)) {
-            return $this->_apcu = new Apcu($table);
-        }
-        return $this->_apcu;
+        if (isset($this->_apcu)) return $this->_apcu;
+        return $this->_apcu = new Apcu($table);
     }
 
 

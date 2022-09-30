@@ -55,6 +55,9 @@ use esp\helper\library\Paging;
  * Class ModelPdo
  * @package esp\core
  */
+
+if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
+
 abstract class DbModel extends Library
 {
 
@@ -150,7 +153,7 @@ abstract class DbModel extends Library
      * @param string|null $db
      * @return Bool
      */
-    final public function release(string $db = 'mysql'): Bool
+    final public function release(string $db = 'mysql'): bool
     {
         return $this->_controller->_pool->release($db);
     }

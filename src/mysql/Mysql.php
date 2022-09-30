@@ -7,50 +7,44 @@ use Error;
 use esp\dbs\Pool;
 use esp\helper\library\Paging;
 
-if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
 
 /**
  * Class Mysql
  */
 final class Mysql
 {
-    /**
-     * @var $pool Pool
-     */
-    private $pool;
-    private $config;
+    private Pool $pool;
+    private Cache $Cache;
+
+    private array $config;
     private $cacheHashKey;
 
-    private $_MysqlPool = array();
+    private array $_MysqlPool = array();
 
     public $dbName;//库名
-    public $_table;//表名，创建对象时，或明确指定当前模型的对应表名
+    public string $_table = '';//表名，创建对象时，或明确指定当前模型的对应表名
 
-    private $_cache = null;       //缓存指令
-    private $_tranIndex = 0;       //事务
+    private $_cache;       //缓存指令
+    private int $_tranIndex = 0;       //事务
 
     private $_print_sql;
     private $_debug_sql;
-    private $_traceLevel = 1;
+    private int $_traceLevel = 1;
 
-    private $_order = [];
-    private $_count = null;
-    private $_decode = [];
-    private $_protect = true;//是否加保护符，默认加
-    private $_distinct = null;//消除重复行
-    private $_having = '';//having
+    private array $_order = [];
+    private array $_decode = [];
+    private string $_having = '';//having
+    private bool $_protect = true;//是否加保护符，默认加
+    private int $_count = 0;//执行统计总数，0为统计，0以上不统计
+    private ?bool $_distinct = null;//消除重复行
 
-    /**
-     * @var $Cache Cache
-     */
-    private $Cache = null;
 
-    protected $tableJoin = array();
-    protected $tableJoinCount = 0;
-    protected $forceIndex = [];
-    protected $selectKey = [];
-    protected $columnKey = null;
-    protected $groupKey = null;
+    protected array $tableJoin = array();
+    protected int $tableJoinCount = 0;
+    protected array $forceIndex = [];
+    protected array $selectKey = [];
+    protected $columnKey;
+    protected $groupKey;
 
     use Helper;
 
@@ -77,7 +71,7 @@ final class Mysql
      * @param int $traceLevel
      * @return PdoContent
      */
-    final private function MysqlObj(int $tranID = 0, int $traceLevel = 0): PdoContent
+    private function MysqlObj(int $tranID = 0, int $traceLevel = 0): PdoContent
     {
         if ($tranID === 1) $tranID = $this->_tranIndex++;
 
@@ -112,8 +106,8 @@ final class Mysql
     public function clear_initial()
     {
         //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
-        $this->_table = null;
-        $this->_count = null;
+        $this->_table = '';
+        $this->_count = 0;
         $this->_distinct = null;
         $this->_protect = true;
         $this->_having = '';
@@ -190,7 +184,7 @@ final class Mysql
      * @return null
      * @throws Error
      */
-    final private function checkRunData(string $action, $data)
+    private function checkRunData(string $action, $data)
     {
         $this->clear_initial();
         if (!is_string($data)) return null;
@@ -528,9 +522,7 @@ final class Mysql
             $obj->order($orderBy, $sort);
         }
 
-        $count = $this->_count;
-        if (is_null($count)) $count = true;
-        $obj->count($count === true);
+        $obj->count($this->_count === 0);
         if (is_string($this->sumKey)) $obj->sum($this->sumKey);
 
         if (is_null($this->pool->paging)) {
@@ -544,16 +536,18 @@ final class Mysql
 
         if ($this->sumKey) $this->pool->paging->sum($data->sum());
 
-        if ($count === true) {
+        if ($this->_count === 0) {//执行统计
             $this->pool->paging->calculate($data->count());
-        } else if (is_int($count)) {
-            if ($count < 0) {
-                $this->pool->paging->calculate((abs($count) + ($this->pool->paging->index - 1)) * $this->pool->paging->size, true);
-            } else {
-                $this->pool->paging->calculate($count);
-            }
-        } else {
+
+        } else if ($this->_count === PHP_INT_MIN) {
             $this->pool->paging->calculate(0);
+
+        } else if ($this->_count > 0) {//指定了总数
+            $this->pool->paging->calculate($this->_count);
+
+        } else {//按此页数计算
+            $this->pool->paging->calculate((abs($this->_count) + ($this->pool->paging->index - 1)) * $this->pool->paging->size, true);
+
         }
 
         return $data->rows(0, null, $_decode);
@@ -650,13 +644,13 @@ final class Mysql
     public function sum(string $sumKey): Mysql
     {
         $this->sumKey = $sumKey;
-        $this->_count = true;
+        $this->_count = 0;
         return $this;
     }
 
     /**
      * 当前请求结果的总行数
-     * @param  $count
+     * @param int $count
      * @return $this
      *
      * $count取值：
@@ -665,10 +659,21 @@ final class Mysql
      * <0       :size的倍数，为了分页不至于显示0页
      * 0以上    :为指定总数
      */
-    public function do_count($count = true): Mysql
+    public function do_count(int $count = null): Mysql
     {
-        $this->_count = $count;
-        if ($count === 0) $this->_count = false;
+        if (is_null($count)) {//无参，表示执行统计
+            $this->_count = 0;
+
+        } else if ($count === 0) {//送入0表示不执行统计
+            $this->_count = PHP_INT_MIN;
+
+        } else if ($count < 0) {//负数，:size的倍数，为了分页不至于显示0页
+            $this->_count = $count;
+
+        } else {//大于0表示已知道总数，不再计算，以此值为准
+            $this->_count = $count;
+        }
+
         return $this;
     }
 
@@ -718,7 +723,7 @@ final class Mysql
 
     /**
      * @param string $string
-     * @return mixed
+     * @return false|string
      */
     public function quote(string $string)
     {
