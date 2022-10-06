@@ -525,7 +525,7 @@ final class Mysql
         $obj->count($this->_count === 0);
         if (is_string($this->sumKey)) $obj->sum($this->sumKey);
 
-        if (is_null($this->pool->paging)) {
+        if (!isset($this->pool->paging)) {
             $this->pool->paging = new Paging();
         }
 
@@ -701,7 +701,7 @@ final class Mysql
 
     public function paging(int $size, int $index = 0, int $recode = null): Mysql
     {
-        if (is_null($this->pool->paging)) {
+        if (!isset($this->pool->paging)) {
             $this->pool->paging = new Paging($size, $index, $recode);
         } else {
             $this->pool->paging->size($size)->index($index);
