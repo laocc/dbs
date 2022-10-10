@@ -56,14 +56,11 @@ use esp\helper\library\Paging;
  * @package esp\core
  */
 
-if (!defined('_CLI')) define('_CLI', (PHP_SAPI === 'cli' or php_sapi_name() === 'cli'));
-
 abstract class DbModel extends Library
 {
+    public string $_dbs_label_ = '这只是一个标识，仅用于在Library中识别这是引用自DbModel的类，并创建_pool对象';
 
-    public $_dbs_label_ = '这只是一个标识，仅用于在Library中识别这是引用自DbModel的类，并创建_pool对象';
-
-    private $alias = [
+    private array $alias = [
         'pagingSet' => 'paging',
         'pageSet' => 'paging',
         'trans_cache' => 'delete_cache',
