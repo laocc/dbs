@@ -34,7 +34,7 @@ final class Pool
     {
         $this->config = &$config;
         $this->controller = &$controller;
-        $this->counter = &$controller->_counter;
+        if (isset($controller->_counter)) $this->counter = &$controller->_counter;
     }
 
     public function debug($data, int $lev = 1): void

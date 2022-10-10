@@ -62,7 +62,7 @@ final class PdoContent
      */
     public function counter(string $action, string $sql, int $traceLevel)
     {
-        if (!$this->pool->counter) return;
+        if (!isset($this->pool->counter)) return;
         if ($traceLevel === -1) $this->pool->counter->recodeMysql($action, $sql);
         $this->pool->counter->recodeMysql($action, $sql, $traceLevel + 1);
     }

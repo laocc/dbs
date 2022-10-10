@@ -346,7 +346,7 @@ final class Mysql
                 $this->clear_initial();
                 $this->_cache = null;
 
-                if ($this->pool->counter) {
+                if (isset($this->pool->counter)) {
                     $sql = "HitCache({$this->_table}) " . json_encode($where, 320);
                     $this->pool->counter->recodeMysql('select', $sql, $this->_traceLevel + 1);
                 }
