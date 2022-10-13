@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace esp\dbs\mysql;
 
-use esp\dbs\Pool;
 use PDO;
-use Error;
+use esp\error\Error;
+use esp\dbs\Pool;
 use PDOException;
 
 
@@ -213,7 +213,7 @@ final class PdoContent
 
             $info = $CONN->getAttribute(PDO::ATTR_SERVER_INFO);
 
-        } catch (\Error $error) {
+        } catch (Error $error) {
             ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
             print_r([
                 'id' => $transID,

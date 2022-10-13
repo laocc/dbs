@@ -2,8 +2,9 @@
 
 namespace esp\dbs\sqlite;
 
-use esp\dbs\Pool;
 use PDO;
+use esp\error\Error;
+use esp\dbs\Pool;
 use function esp\helper\mk_dir;
 
 final class Sqlite
@@ -17,12 +18,12 @@ final class Sqlite
     {
         $this->pool = &$pool;
         $this->conf = $conf;
-        if (!isset($this->conf['db'])) throw new \Error('Sqlite库文件未指定');
+        if (!isset($this->conf['db'])) throw new Error('Sqlite库文件未指定');
 
         if (!file_exists($this->conf['db'])) {
             mk_dir($this->conf['db']);
             $fp = fopen($this->conf['db'], 'w');
-            if (!$fp) throw new \Error('Sqlite创建失败');
+            if (!$fp) throw new Error('Sqlite创建失败');
             fclose($fp);
         }
         $this->db = new PDO("sqlite:{$this->conf['db']}");
