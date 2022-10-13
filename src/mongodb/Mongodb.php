@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\dbs\mongodb;
 
-use Error;
+use esp\error\Error;
 use esp\dbs\Pool;
 use MongoDB\Driver\Manager;
 use MongoDB\Driver\BulkWrite;

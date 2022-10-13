@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\dbs\memcache;
 
-use Error;
+use esp\error\Error;
 use esp\dbs\library\KeyValue;
 use esp\dbs\Pool;
 

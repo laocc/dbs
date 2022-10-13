@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace esp\dbs\redis;
 
-use Error;
 use esp\dbs\Pool;
+use esp\error\Error;
 use esp\dbs\library\KeyValue;
 
 /**

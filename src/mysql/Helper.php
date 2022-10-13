@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\dbs\mysql;
 
-use Error;
+use esp\error\Error;
 use function esp\helper\root;
 
 /**

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace esp\dbs;
 
-use Error;
+use esp\error\Error;
 use esp\core\Controller;
 use esp\dbs\apcu\Apcu;
 use esp\dbs\mongodb\Mongodb;
