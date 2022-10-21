@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\dbs\redis;
 
-use esp\dbs\Pool;
 use esp\error\Error;
 use esp\dbs\library\KeyValue;
 
@@ -14,16 +13,17 @@ use esp\dbs\library\KeyValue;
  */
 final class Redis implements KeyValue
 {
+    public \Redis $redis;
+    private array $host;
+    private array $conf;
+    private int $dbIndex = 0;
+
+    private array $tmpList = [];
+    private array $tmpHash = [];
+
     /**
-     * @var $redis \Redis
+     * @throws Error
      */
-    public $redis;
-
-    private $pool;
-    private $host;
-    private $conf;
-    private $dbIndex = 0;
-
     public function __construct(array $conf, int $db = null)
     {
 //        $this->pool = &$pool;
@@ -116,9 +116,6 @@ final class Redis implements KeyValue
         return $this->tmpList[$tabName];
     }
 
-    private $tmpList = [];
-    private $tmpHash = [];
-
     /**
      * 创建一个hash表
      * @param string $tabName
@@ -198,9 +195,9 @@ final class Redis implements KeyValue
     /**
      * 清空
      * @param bool $flushAll
-     * @return bool|mixed
+     * @return bool
      */
-    public function flush(bool $flushAll = false)
+    public function flush(bool $flushAll = false): bool
     {
 //        if ($flushAll) return $this->redis->flushAll();
         return $this->redis->flushDB();
@@ -215,7 +212,7 @@ final class Redis implements KeyValue
      * @param $message
      * @return int
      */
-    public function publish(string $channel, string $action, $message)
+    public function publish(string $channel, string $action, $message): int
     {
         $value = [];
         $value['action'] = $action;
@@ -332,12 +329,11 @@ final class Redis implements KeyValue
     /**
      * 查询某键是否存在
      * @param $key
-     * @return bool
+     * @return bool|int|\Redis
      */
     public function exists($key)
     {
         return $this->redis->exists($key);
-
     }
 
     /**
@@ -384,7 +380,7 @@ final class Redis implements KeyValue
 
 
     /**
-     * @param string[] ...$keys
+     * @param string ...$keys
      * @return bool|int
      */
     public function del(string ...$keys): bool
