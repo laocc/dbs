@@ -160,6 +160,7 @@ trait Helper
      * 这里所创建的model和该实例在同一目录
      * 调用： $model->createModel(get_parent_class($model))
      *
+     * @throws Error
      */
     final public function createModel(string $class)
     {
@@ -210,6 +211,7 @@ PHP;
     /**
      * 列出所有字段的名称
      * @return array
+     * @throws Error
      */
     final public function title(): array
     {
@@ -231,8 +233,9 @@ PHP;
      * @param string $table
      * @param array $data
      * @return array|mixed
+     * @throws Error
      */
-    final private function _FillField(string $dbName, string $table, array $data)
+    final protected function _FillField(string $dbName, string $table, array $data)
     {
         $field = $this->hash($table)->get('_field');
         if (empty($field)) {
@@ -267,7 +270,10 @@ PHP;
         }
     }
 
-    final private function _AllField(string $dbName, string $table, array $data)
+    /**
+     * @throws Error
+     */
+    final protected function _AllField(string $dbName, string $table, array $data)
     {
         $field = $this->hash($table)->get('_field');
         if (empty($field)) {
