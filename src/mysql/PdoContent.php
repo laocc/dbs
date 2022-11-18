@@ -8,26 +8,21 @@ use esp\error\Error;
 use esp\dbs\Pool;
 use PDOException;
 
-
 final class PdoContent
 {
-    /**
-     * @var $pool Pool
-     */
-    private $pool;
+    private Pool $pool;
+    private array $_pool = [];//进程级的连接池，$master，$slave
 
-    private $_CONF;//配置定义
-    private $_trans_run = array();//事务状态
-    private $_trans_error = array();//事务出错状态
-    private $connect_time = array();//连接时间
-    private $transID;
-    private $_checkGoneAway = false;
-    private $_cli_print_sql = false;
-    private $_pool = [];//进程级的连接池，$master，$slave
-
-    public $_error = array();//每个连接的错误信息
-    public $dbName;
-    public $lowCase = false; //是否转换为小写
+    private array $_CONF;//配置定义
+    private array $_trans_run = array();//事务状态
+    private array $_trans_error = array();//事务出错状态
+    private array $connect_time = array();//连接时间
+    private bool $_checkGoneAway = false;
+    private bool $_cli_print_sql = false;
+    private int $transID;
+    public string $dbName;
+    public bool $lowCase = false; //是否转换为小写
+    public array $_error = array();//每个连接的错误信息
 
     /**
      * PdoContent constructor.
@@ -37,7 +32,6 @@ final class PdoContent
      */
     public function __construct(int $tranID, array $conf, Pool $pool)
     {
-        if (!is_array($conf)) throw new Error('Mysql配置信息错误', 1);
         $this->pool = &$pool;
         $this->_CONF = $conf + [
                 'charset' => 'utf8mb4',
@@ -59,6 +53,7 @@ final class PdoContent
      * @param string $action
      * @param string $sql
      * @param int $traceLevel
+     * @throws Error
      */
     public function counter(string $action, string $sql, int $traceLevel)
     {
@@ -71,13 +66,9 @@ final class PdoContent
      * @param string $tabName
      * @param bool|null $_protect
      * @return Builder
-     * @throws Error
      */
     public function table(string $tabName, bool $_protect = null): Builder
     {
-        if (!is_string($tabName) || empty($tabName)) {
-            throw new Error('PDO_Error :  数据表名错误', 1);
-        }
         $bud = new Builder($this, boolval($this->_CONF['param'] ?? 0), $this->lowCase, $this->transID);
         return $bud->table($tabName, $_protect);
     }
@@ -89,6 +80,7 @@ final class PdoContent
      * @param array $params
      * @param int $traceLevel
      * @return bool|Result|int|string|null
+     * @throws Error
      */
     public function procedure(string $proName, array $params, int $traceLevel = 1)
     {
@@ -196,6 +188,9 @@ final class PdoContent
         }
     }
 
+    /**
+     * @throws Error
+     */
     public function quote($string)
     {
         $CONN = $this->connect(false, 0);
@@ -268,24 +263,113 @@ final class PdoContent
 
 
     /**
-     * 直接执行SQL
-     * @param string $sql
-     * @param array $param
-     * @return bool|null
+     * 直接执行，不进行基本安全检测
+     *
      * @throws Error
      */
-    private function query_dddd(string $sql, array $param = [])
+    public function execute(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
     {
-        $option = [
-            'param' => $param,
-            'prepare' => true,
-            'count' => false,
-            'fetch' => 1,
-            'bind' => [],
-            'trans_id' => 0,
-            'action' => $this->sqlAction($sql),
+        if (empty($sql)) {
+            throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
+        }
+        if (_CLI and $this->_cli_print_sql) echo "{$sql}\n";
+
+        if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
+            $option = [
+                'param' => $option,
+                'prepare' => true,
+                'count' => false,
+                'fetch' => 1,
+                'limit' => 0,
+                'bind' => [],
+                'trans_id' => 0,
+                'action' => 'select',
+            ];
+        }
+
+        $transID = ($option['trans_id']);
+        $real = 'master';
+        $try = 0;
+        tryExe://重新执行起点
+
+        //连接数据库，自动选择主从库
+        if (!$CONN) {
+            if (!$try and isset($this->_pool[$real][$transID]) and !empty($this->_pool[$real][$transID])) {
+                $CONN = $this->_pool[$real][$transID];
+            } else {
+                $CONN = $this->connect(true, $transID, $traceLevel + 1, $try);
+            }
+        }
+
+        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN, $try)) {
+            echo "MysqlPDO has gone away, try Now!\n";
+            goto tryExe;
+        }
+
+        $debug = true;
+        $debug_sql = (($option['debug_sql'] ?? null) !== false);
+
+        $error = array();//预置的错误信息
+
+        $debugOption = [
+            'trans' => var_export($transID, true),
+            'server' => $CONN->getAttribute(PDO::FETCH_COLUMN),//服务器IP
+            'sql' => $sql,
+            'prepare' => (!empty($option['param']) or $option['prepare']) ? 'YES' : 'NO',
+            'param' => json_encode($option['param'], 256 | 64),
+            'ready' => microtime(true),
         ];
-        return $this->query($sql, $option);
+        $result = $this->select($CONN, $sql, $option, $error, $traceLevel + 1);//执行
+
+        $debugOption += [
+            'finish' => $time_b = microtime(true),
+            'runTime' => ($time_b - $debugOption['ready']) * 1000,
+            'result' => is_object($result) ? 'Result' : var_export($result, true),
+        ];
+        if (($option['limit'] ?? 0) > 0 and $debug and !_CLI and $debugOption['runTime'] > $option['limit']) {
+            $trueSQL = str_replace(array_keys($option['param']), array_map(function ($v) {
+                return is_string($v) ? "'{$v}'" : $v;
+            }, array_values($option['param'])), $sql);
+
+            $this->pool->debug($debugOption, $traceLevel + 1);
+            $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL], $traceLevel + 1);
+        }
+
+        if (!empty($error)) {
+            $debugOption['error'] = $error;
+            $this->_error[$transID] = $error;
+
+            $errState = intval($error[1]);
+            _CLI and print_r(['try' => $try, 'error' => $errState]);
+
+            if ($debug and !_CLI) {
+                $this->pool->debug($debugOption, $traceLevel + 1);
+                $this->pool->error($error, $traceLevel + 1);
+            }
+
+            if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
+                if (_CLI) {
+                    print_r($debugOption);
+                    print_r([
+                        'id' => $transID,
+                        'connect_time' => $this->connect_time[$transID],
+                        'now' => time(),
+                        'after' => time() - $this->connect_time[$transID],
+                    ]);
+                } else if ($debug) {
+                    $this->pool->debug($debugOption, $traceLevel + 1);
+                }
+                unset($this->_pool[$real][$transID]);
+                $CONN = null;
+                goto tryExe; //重新执行
+            }
+            if ($debug) $error['sql'] = $sql;
+            if (_CLI) print_r($debugOption);
+            ($debug and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
+            return json_encode($error, 256 | 64);
+        }
+        ($debug and $debug_sql and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
+        return $result;
     }
 
     /**

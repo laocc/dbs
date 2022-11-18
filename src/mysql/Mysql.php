@@ -21,7 +21,7 @@ final class Mysql
 
     private array $_MysqlPool = array();
 
-    public $dbName;//库名
+    public string $dbName;//库名
     public string $_table = '';//表名，创建对象时，或明确指定当前模型的对应表名
 
     private $_cache;       //缓存指令
@@ -45,6 +45,7 @@ final class Mysql
     protected array $selectKey = [];
     protected $columnKey;
     protected $groupKey;
+    private string $sumKey;
 
     use Helper;
 
@@ -84,6 +85,7 @@ final class Mysql
      * @param int $trans_id
      * @param array $batch_SQLs
      * @return bool|Builder
+     * @throws Error
      */
     public function trans(int $trans_id = 1, array $batch_SQLs = [])
     {
@@ -221,7 +223,6 @@ final class Mysql
      * @param string $table
      * @param array $where
      * @return $this
-     * @throws Error
      */
     public function delete_cache(string $table, array $where): Mysql
     {
@@ -297,6 +298,7 @@ final class Mysql
      * @param string $proName
      * @param array $params
      * @return array|mixed|null
+     * @throws Error
      */
     public function call(string $proName, array $params)
     {
@@ -313,14 +315,29 @@ final class Mysql
         return $val;
     }
 
+    public function pdo(int $transID = 0): PdoContent
+    {
+        return $this->MysqlObj($transID, 1);
+    }
 
     /**
-     * 直接执行一条sql
+     * 不经过安全检测
+     *
+     * @throws Error
+     */
+    public function execute(string $sql)
+    {
+        return $this->MysqlObj(0, 1)->execute($sql);
+    }
+
+    /**
+     * 直接执行一条sql，经过一些基本的安全检测
      *
      * @param string $sql
      * @return bool|Result|int|string|null
+     * @throws Error
      */
-    final  public function query(string $sql)
+    public function query(string $sql)
     {
         return $this->MysqlObj(0, 1)->query($sql);
     }
@@ -331,6 +348,7 @@ final class Mysql
      * @param string|null $orderBy
      * @param string $sort
      * @return mixed|null
+     * @throws Error
      */
     public function get($where, string $orderBy = null, string $sort = 'asc')
     {
@@ -412,8 +430,9 @@ final class Mysql
      * @param string $sort
      * @param int $limit
      * @return array
+     * @throws Error
      */
-    public function all($where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
+    public function all(array $where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect)->prepare();
@@ -461,8 +480,9 @@ final class Mysql
      *
      * @param array $where
      * @return int
+     * @throws Error
      */
-    public function count($where = []): int
+    public function count(array $where = []): int
     {
         $this->selectKey = [['count(1) as c', false]];
         $dbs = $this->get($where);
@@ -476,8 +496,9 @@ final class Mysql
      * @param array $where
      * @param int $limit
      * @return array
+     * @throws Error
      */
-    public function rand($where = [], int $limit = 1): array
+    public function rand(array $where = [], int $limit = 1): array
     {
         $dbs = $this->all($where, 'RAND', 'asc', $limit);
         if (empty($dbs)) return [];
@@ -501,7 +522,7 @@ final class Mysql
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
-        if (is_bool($this->_protect)) $obj->protect($this->_protect);
+        $obj->protect($this->_protect);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
         if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
@@ -523,7 +544,7 @@ final class Mysql
         }
 
         $obj->count($this->_count === 0);
-        if (is_string($this->sumKey)) $obj->sum($this->sumKey);
+        if (isset($this->sumKey)) $obj->sum($this->sumKey);
 
         if (!isset($this->pool->paging)) {
             $this->pool->paging = new Paging();
@@ -534,7 +555,7 @@ final class Mysql
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('list', $data)) return $v;
 
-        if ($this->sumKey) $this->pool->paging->sum($data->sum());
+        if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
 
         if ($this->_count === 0) {//执行统计
             $this->pool->paging->calculate($data->count());
@@ -633,7 +654,6 @@ final class Mysql
         return "polygon(" . implode(',', $val) . ")";
     }
 
-    private $sumKey = null;
 
     /**
      * 统计某几个字段的和值
@@ -650,7 +670,7 @@ final class Mysql
 
     /**
      * 当前请求结果的总行数
-     * @param int $count
+     * @param int|null $count
      * @return $this
      *
      * $count取值：
@@ -724,6 +744,7 @@ final class Mysql
     /**
      * @param string $string
      * @return false|string
+     * @throws Error
      */
     public function quote(string $string)
     {
