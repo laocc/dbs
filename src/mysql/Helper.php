@@ -196,8 +196,8 @@ namespace {$namespace};
 
 class {$tab} extends {$parent} 
 {
-    public \$_table = '{$table['TABLE_NAME']}';
-    public \$_id = '{$keyID['COLUMN_NAME']}';
+    public string \$_table = '{$table['TABLE_NAME']}';
+    public string \$_id = '{$keyID['COLUMN_NAME']}';
     
 }
 PHP;
