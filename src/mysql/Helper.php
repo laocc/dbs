@@ -165,6 +165,8 @@ trait Helper
     final public function createModel(string $class)
     {
 //        $self = explode('\\', get_parent_class($this));
+        if (strpos($class, 'Object')) return '请使用->createModel(get_parent_class($modName))方式调用';
+
         $self = explode('\\', $class);
         $parent = array_pop($self);
         if ($parent === 'Model') return 'Model实例应该有个中间类，比如_Base，不应该直接引自Model类，若确需这样，请手工创建。';
