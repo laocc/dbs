@@ -7,12 +7,9 @@ use \Redis;
 
 final class Cache
 {
-    private $hashKey;
-    private $table = '';
-    /**
-     * @var $redis Redis
-     */
-    private $redis;
+    private string $hashKey;
+    private string $table = '';
+    private Redis $redis;
 
     public function __construct(Redis $redis, string $db)
     {

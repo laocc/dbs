@@ -305,9 +305,6 @@ final class Mysql
         $mysql = $this->MysqlObj(0, 1);
         $call = $mysql->procedure($proName, $params, $this->_traceLevel + 1);
 
-//        $bud = new Builder($mysql, boolval($this->_CONF['param'] ?? 0), false, 0);
-//        $call = $bud->procedure($proName, $params, $this->_traceLevel + 1);
-
         $val = $call->rows();
 
         if ($val === false) $val = null;

@@ -21,7 +21,6 @@ final class PdoContent
     private bool $_cli_print_sql = false;
     private int $transID;
     public string $dbName;
-    public bool $lowCase = false; //是否转换为小写
     public array $_error = array();//每个连接的错误信息
 
     /**
@@ -69,7 +68,7 @@ final class PdoContent
      */
     public function table(string $tabName, bool $_protect = null): Builder
     {
-        $bud = new Builder($this, boolval($this->_CONF['param'] ?? 0), $this->lowCase, $this->transID);
+        $bud = new Builder($this, boolval($this->_CONF['param'] ?? 0), $this->transID);
         return $bud->table($tabName, $_protect);
     }
 
@@ -84,7 +83,7 @@ final class PdoContent
      */
     public function procedure(string $proName, array $params, int $traceLevel = 1)
     {
-        $bud = new Builder($this, boolval($this->_CONF['param'] ?? 0), false, $this->transID);
+        $bud = new Builder($this, boolval($this->_CONF['param'] ?? 0), $this->transID);
         return $bud->procedure($proName, $params, $traceLevel);
     }
 
@@ -850,7 +849,7 @@ final class PdoContent
             return $CONN->commit();
         }
 
-        return new Builder($this, boolval($this->_CONF['param'] ?? 0), $this->lowCase, $trans_id);
+        return new Builder($this, boolval($this->_CONF['param'] ?? 0), $trans_id);
     }
 
     /**

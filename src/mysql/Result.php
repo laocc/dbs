@@ -8,10 +8,10 @@ use function esp\helper\numbers;
 
 final class Result
 {
-    private $rs;//结果对象
-    private $count = 0;
-    private $sql;
-    private $sum = [];
+    private PDOStatement $rs;//结果对象
+    private int $count = 0;
+    private string $sql;
+    private array $sum = [];
 
     /**
      * PdoResult constructor.
@@ -23,14 +23,9 @@ final class Result
     {
         $this->rs = &$result;
         $this->sql = $sql;
-        $this->count = $count['count'] ?? 0;
+        $this->count = intval($count['count'] ?? 0);
         unset($count['count']);
         $this->sum = $count;
-    }
-
-    public function __destruct()
-    {
-        $this->rs = null;
     }
 
     public function __get($key)
@@ -159,9 +154,7 @@ final class Result
      */
     public function count(): int
     {
-        return ($this->count === null) ?
-            $this->rs->rowCount() :
-            $this->count;
+        return ($this->count === 0) ? $this->rs->rowCount() : $this->count;
     }
 
     /**

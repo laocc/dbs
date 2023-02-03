@@ -12,54 +12,51 @@ use esp\error\Error;
  */
 final class Builder
 {
-    /**
-     * @var $_PDO PdoContent
-     */
-    private $_PDO;
+    private PdoContent $_PDO;
 
-    private $_table = '';//使用的表名称
+    private string $_table = '';//使用的表名称
 
-    private $_select = array();//保存已经设置的选择字符串
-    private $_join_select = array();//join表字段
+    private array $_select = array();//保存已经设置的选择字符串
+    private array $_join_select = array();//join表字段
 
-    private $_where = '';//保存已经设置的Where子句
-    private $_where_group_in = false;
+    private string $_where = '';//保存已经设置的Where子句
+    private int $_where_group_in = 0;
 
-    private $_limit = '';//LIMIT组合串
-    private $_skip = 0;//跳过行数
+    private string $_limit = '';//LIMIT组合串
+    private int $_skip = 0;//跳过行数
 
-    private $_join = array();//保存已经应用的join字符串，数组内保存解析好的完整字符串
-    private $_joinTable = array();
+    private array $_join = array();//保存已经应用的join字符串，数组内保存解析好的完整字符串
+    private array $_joinTable = array();
 
-    private $_order_by = '';//保存已经解析的排序字符串
+    private string $_order_by = '';//保存已经解析的排序字符串
 
-    private $_group;
-    private $_forceIndex = '';
-    private $_having = '';
+    private string $_group;//可能是string或array
+    private string $_forceIndex = '';
+    private string $_having = '';
 
-    private $_Trans_ID = 0;//多重事务ID，正常情况都=0，只有多重事务理才会大于0
+    private int $_Trans_ID = 0;//多重事务ID，正常情况都=0，只有多重事务理才会大于0
 
-    private $_count = false;//是否启用自动统计
-    private $_distinct = null;//消除重复行
-    private $_fetch_type = 1;//返回的数据，是用1键值对方式，还是0数字下标，或3都要，默认1
+    private bool $_count = false;//是否启用自动统计
+    private bool $_distinct = false;//消除重复行
+    private int $_fetch_type = 1;//返回的数据，是用1键值对方式，还是0数字下标，或3都要，默认1
 
-    private $_dim_param = false;//系统是否定义了是否使用预处理
-    private $_prepare = false;//是否启用预处理
-    private $_param = false;//预处理中，是否启用参数占位符方式
-    private $_param_data = array();//占位符的事后填充内容
+    private bool $_dim_param = false;//系统是否定义了是否使用预处理
+    private bool $_prepare = false;//是否启用预处理
+    private bool $_param = false;//预处理中，是否启用参数占位符方式
+    private array $_param_data = array();//占位符的事后填充内容
 
-    private $_bindKV = array();
-    private $_debug_sql;//是否最后记录sql执行结果
+    private array $_bindKV = array();
+    private bool $_debug_sql = false;//是否最后记录sql执行结果
 
-    private $_gzLevel = 5;//压缩比
-    private $_protect = true;//默认加保护符
-    private $_lowCase = false;//表名转换成小写，仅针对表名
+    private int $_gzLevel = 5;//压缩比
+    private bool $_protect = true;//默认加保护符
+    private string $sumKey;
+    private array $_temp_table = array();
 
-    public function __construct(PdoContent $pdo, bool $param, bool $lowCase, int $trans_id = 0)
+    public function __construct(PdoContent $pdo, bool $param, int $trans_id = 0)
     {
         $this->_PDO = &$pdo;
         $this->_dim_param = $param;
-        $this->_lowCase = $lowCase;
         $this->clean_builder();
 
         //必须在clean_builder后执行
@@ -79,8 +76,8 @@ final class Builder
         $this->_skip = 0;
         $this->_fetch_type = 1;
         $this->_count = false;
-        $this->_group = null;
-        $this->_distinct = null;
+        $this->_group = '';
+        $this->_distinct = false;
         $this->_protect = true;
         $this->_gzLevel = 5;
 
@@ -104,7 +101,6 @@ final class Builder
     {
         $this->clean_builder(false);
         if (is_bool($_protect)) $this->_protect = $_protect;
-        if ($this->_lowCase) $tableName = strtolower($tableName);
         $this->_table = $tableName;
         if ($this->_protect) $this->_table = $this->protect_identifier($this->_table);
         return $this;
@@ -700,7 +696,7 @@ final class Builder
                         $key = implode(',', $keys);
                         $_where = "{$fieldPro} {$in} ({$key})";
                     } else {
-                        $_where = "{$fieldPro} {$in} ({$value})";
+                        $_where = "{$fieldPro} {$in} (" . implode(',', $value) . ")";
                     }
                     break;
                 case '%'://mod
@@ -1003,7 +999,6 @@ final class Builder
         return $this;
     }
 
-    private $sumKey = null;
 
     public function sum(string $sumKey): Builder
     {
@@ -1041,7 +1036,7 @@ final class Builder
         $skip = $skip ?: $this->_skip;
         if ($skip < 0) $skip = 0;
         if ($skip === 0) {
-            $this->_limit = $size;
+            $this->_limit = strval($size);
         } else {
             $this->_limit = $skip . ',' . $size;
         }
@@ -1065,7 +1060,6 @@ final class Builder
         if (!in_array($method, [null, 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'USING'])) {
             throw new Error('DB_ERROR: JOIN模式不存在：' . $method, 1);
         }
-        if ($this->_lowCase) $table = strtolower($table);
         $this->_joinTable[] = $table;
 
         // 保护标识符
@@ -1085,15 +1079,26 @@ final class Builder
         }
 
         $_filter_arr = array_map(function ($re) use ($identifier) {
-            return preg_replace_callback('/^(.*)(>|<|<>|=|<=>)(.*)/', function ($mch) use ($identifier) {
+
+            return preg_replace_callback('/^(.*)([!><=&]{1,2})(.*)/', function ($mch) use ($identifier) {
                 if ($mch[1] === $mch[3]) {
                     throw new Error('DB_ERROR: JOIN条件两边不能完全相同，如果是不同表相同字段名，请用[tabName.filed]的方式', 1);
                 }
-                if ($identifier)
-                    return $this->protect_identifier($mch[1]) . " {$mch[2]} " . $this->protect_identifier($mch[3]);
-                else
+
+                if (($mch[2] === '&') or ($mch[2] === '&=')) {
+                    return $this->protect_identifier($mch[1]) . " & {$mch[3]} >0";
+                }
+                if ($identifier) {
+                    if (is_numeric($mch[3])) {
+                        return $this->protect_identifier($mch[1]) . " {$mch[2]} {$mch[3]}";
+                    } else {
+                        return $this->protect_identifier($mch[1]) . " {$mch[2]} " . $this->protect_identifier($mch[3]);
+                    }
+                } else {
                     return "{$mch[1]} {$mch[2]} {$mch[3]}";
+                }
             }, $re);
+
         }, $_filter);
 
         $_filter_str = implode(' and ', $_filter_arr);
@@ -1150,16 +1155,17 @@ final class Builder
     /**
      * 执行Group 和 having
      *
-     * @param string $field 分组字段
+     * @param void $field 分组字段
      * @return $this
      *
      * 被分组，过滤条件的字段务必出现在select中
      *
      * $sql="select orgGoodsID,count(*) as orgCount from tabs group by orgGoodsID having orgCount>1";
      */
-    public function group(string $field): Builder
+    public function group($field): Builder
     {
-        $this->_group = $field;
+        if (is_array($field)) $field = implode(',', $field);
+        $this->_group = strval($field);
         return $this;
     }
 
@@ -1195,12 +1201,7 @@ final class Builder
 
         if (!empty($where = $this->_build_where())) $sql[] = "WHERE {$where}";
 
-        if (!empty($this->_group)) {
-            if (is_array($this->_group)) {
-                $this->_group = implode(',', $this->_group);
-            }
-            $sql[] = "GROUP BY {$this->_group}";
-        }
+        if (!empty($this->_group)) $sql[] = "GROUP BY {$this->_group}";
 
         if (!empty($this->_having)) $sql[] = "HAVING {$this->_having}";
 
@@ -1215,7 +1216,7 @@ final class Builder
     {
         $sql = array();
         $sum = ['count(1) as count'];
-        if (is_string($this->sumKey)) {
+        if (isset($this->sumKey)) {
             foreach (explode(',', $this->sumKey) as $k) $sum[] = "sum(`{$k}`) as `{$k}`";
         }
         $sum = implode(',', $sum);
@@ -1233,12 +1234,7 @@ final class Builder
 
         if (!empty($where)) $sql[] = "WHERE {$where}";
 
-        if (!empty($this->_group)) {
-            if (is_array($this->_group)) {
-                $this->_group = implode(',', $this->_group);
-            }
-            $sql[] = "GROUP BY {$this->_group}";
-        }
+        if (!empty($this->_group)) $sql[] = "GROUP BY {$this->_group}";
 
         if (!empty($this->_having)) $sql[] = "HAVING {$this->_having}";
 
@@ -1322,8 +1318,6 @@ final class Builder
         $this->_temp_table[$tmpID] = $this->_build_get();
         return $tmpID;
     }
-
-    private $_temp_table = array();
 
 
     /**
@@ -1624,7 +1618,7 @@ final class Builder
             if ($this->_protect) $key = $this->protect_identifier($key);
 
             if (isset($data[0]) and isset($data[1])) {
-                $oldVal = quotemeta($data[0]);
+                $oldVal = quotemeta($data[0]);//转义元字符集
                 $newVal = quotemeta($data[1]);
             } else {
                 $oldVal = $newVal = '';
@@ -1699,21 +1693,14 @@ final class Builder
 
         } else if (preg_match('/^([\w\-]+)\.([\w\-]+)$/i', $clause, $m)) {
             //tabUser.userName => `tabUser`.`userName`
-            if ($this->_lowCase) $m[1] = strtolower($m[1]);
             return "`{$m[1]}`.`{$m[2]}`";
 
         } else if (preg_match('/^([\w\-]+)\.\*$/i', $clause, $m)) {
             //tabUser.* => `tabUser`.*
-            if ($this->_lowCase) $m[1] = strtolower($m[1]);
             return "`{$m[1]}`.*";
 
         } else if (preg_match('/^[\w\-]+\.?[\w\-]+\,[\w\-]+.+$/i', $clause, $m)) {
             //tabUser.userName,userMobile like
-            if ($this->_lowCase) {
-                $clause = preg_replace_callback("/([a-z]+[A-Z]\w+)\./", function ($mt) {
-                    return strtolower($mt[1]) . '.';
-                }, $clause);
-            }
             return "CONCAT({$clause})";
 
         } else if (preg_match('/^([\w\-]+)\s+AS\s+([\w\-]+)$/i', $clause, $m)) {
@@ -1722,7 +1709,6 @@ final class Builder
 
         } else if (preg_match('/^([\w\-]+)\.([\w\-]+)\s+AS\s+([\w\-]+)$/i', $clause, $m)) {
             //tabUser.userName as name => `tabUser`.`userName` as `name`
-            if ($this->_lowCase) $m[1] = strtolower($m[1]);
             return "`{$m[1]}`.`{$m[2]}` as `{$m[3]}`";
         }
 
