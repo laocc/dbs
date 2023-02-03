@@ -50,7 +50,7 @@ final class Builder
 
     private int $_gzLevel = 5;//压缩比
     private bool $_protect = true;//默认加保护符
-    private string $sumKey;
+    private array $sumKey;
     private array $_temp_table = array();
 
     public function __construct(PdoContent $pdo, bool $param, int $trans_id = 0)
@@ -1000,8 +1000,9 @@ final class Builder
     }
 
 
-    public function sum(string $sumKey): Builder
+    public function sum($sumKey): Builder
     {
+        if (is_string($sumKey)) $sumKey = explode(',', $sumKey);
         $this->sumKey = $sumKey;
         return $this;
     }
@@ -1217,7 +1218,7 @@ final class Builder
         $sql = array();
         $sum = ['count(1) as count'];
         if (isset($this->sumKey)) {
-            foreach (explode(',', $this->sumKey) as $k) $sum[] = "sum(`{$k}`) as `{$k}`";
+            foreach ($this->sumKey as $k) $sum[] = "sum(`{$k}`) as `{$k}`";
         }
         $sum = implode(',', $sum);
         $sql[] = "SELECT {$sum} FROM {$this->_table}";
@@ -1295,7 +1296,7 @@ final class Builder
         $_build_sql = $this->_build_get();
         $this->replace_tempTable($_build_sql);
 
-        if ($this->sumKey or $option['count']) {
+        if (isset($this->sumKey) or $option['count']) {
             $option['count'] = true;
             $option['_count_sql'] = $this->_build_sum_sql();
             $this->replace_tempTable($option['_count_sql']);
