@@ -27,8 +27,7 @@ final class Mysql
     private $_cache;       //缓存指令
     private int $_tranIndex = 0;       //事务
 
-    private $_print_sql;
-    private $_debug_sql;
+    private bool $_debug_sql;
     private int $_traceLevel = 1;
 
     private array $_order = [];
@@ -44,7 +43,7 @@ final class Mysql
     protected array $forceIndex = [];
     protected array $selectKey = [];
     protected $columnKey;
-    protected $groupKey;
+    protected string $groupKey;
     private string $sumKey;
 
     use Helper;
@@ -55,6 +54,10 @@ final class Mysql
         $this->_table = $table;
         $this->config = $conf;
         $this->dbName = $conf['db'];
+
+        if (isset($conf['debug_sql'])) {
+            $this->_debug_sql = boolval($conf['debug_sql']);
+        }
 
         if ($conf['cache'] ?? 0) {
             if (is_string($conf['cache'])) {
@@ -96,7 +99,7 @@ final class Mysql
      * @param bool $df
      * @return $this
      */
-    public function debug_sql(bool $df): Mysql
+    public function debug_sql(bool $df = true): Mysql
     {
         $this->_debug_sql = $df;
         return $this;
@@ -117,7 +120,7 @@ final class Mysql
         $this->_decode = [];
 
         $this->columnKey = null;
-        $this->groupKey = null;
+        $this->groupKey = '';
         $this->forceIndex = [];
         $this->tableJoin = [];
         $this->selectKey = [];
@@ -380,11 +383,11 @@ final class Mysql
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
-        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($this->_having) $obj->having($this->_having);
         if ($where) $obj->where($where);
-        if (is_string($this->groupKey)) $obj->group($this->groupKey);
+        if (isset($this->groupKey)) $obj->group($this->groupKey);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
@@ -448,9 +451,9 @@ final class Mysql
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
         if ($where) $obj->where($where);
-        if (is_string($this->groupKey)) $obj->group($this->groupKey);
+        if (isset($this->groupKey)) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
-        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->_having) $obj->having($this->_having);
 
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
@@ -522,10 +525,10 @@ final class Mysql
         $obj->protect($this->_protect);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-        if (is_bool($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
 
         if ($where) $obj->where($where);
-        if (is_string($this->groupKey)) $obj->group($this->groupKey);
+        if (isset($this->groupKey)) $obj->group($this->groupKey);
         if ($this->_having) $obj->having($this->_having);
 
         if (!empty($this->_order)) {

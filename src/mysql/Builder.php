@@ -1156,17 +1156,16 @@ final class Builder
     /**
      * 执行Group 和 having
      *
-     * @param void $field 分组字段
+     * @param string $field 分组字段
      * @return $this
      *
      * 被分组，过滤条件的字段务必出现在select中
      *
      * $sql="select orgGoodsID,count(*) as orgCount from tabs group by orgGoodsID having orgCount>1";
      */
-    public function group($field): Builder
+    public function group(string $field): Builder
     {
-        if (is_array($field)) $field = implode(',', $field);
-        $this->_group = strval($field);
+        $this->_group = $field;
         return $this;
     }
 
