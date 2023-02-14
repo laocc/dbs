@@ -57,6 +57,7 @@ final class Builder
     {
         $this->_PDO = &$pdo;
         $this->_dim_param = $param;
+        $this->_debug_sql = $pdo->_debug_sql;
         $this->clean_builder();
 
         //必须在clean_builder后执行

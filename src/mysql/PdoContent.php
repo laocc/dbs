@@ -22,6 +22,7 @@ final class PdoContent
     private int $transID;
     public string $dbName;
     public array $_error = array();//每个连接的错误信息
+    public bool $_debug_sql;
 
     /**
      * PdoContent constructor.
@@ -44,6 +45,11 @@ final class PdoContent
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $this->_CONF['db'];
+
+        if (isset($this->_CONF['debug_sql'])) {
+            $this->_debug_sql = boolval($this->_CONF['debug_sql']);
+        }
+
     }
 
     /**

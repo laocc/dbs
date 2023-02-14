@@ -215,7 +215,7 @@ final class Mysql
         $mysql = $this->MysqlObj(0, 1);
         $data = $full ? $data : $this->_FillField($mysql->dbName, $this->_table, $data);
         $obj = $mysql->table($this->_table, $this->_protect);
-        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         $val = $obj->insert($data, $replace, $this->_traceLevel + 1);
 
         $ck = $this->checkRunData('insert', $val);
@@ -267,7 +267,7 @@ final class Mysql
 
         $mysql = $this->MysqlObj(0, 1);
         $obj = $mysql->table($this->_table, $this->_protect);
-        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         $val = $obj->where($where)->delete($this->_traceLevel + 1);
 
         $this->delete_cache($this->_table, $where);
@@ -293,7 +293,7 @@ final class Mysql
         $mysql = $this->MysqlObj(0, 1);
 
         $obj = $mysql->table($this->_table, $this->_protect);
-        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         $val = $obj->where($where)->update($data, true, $this->_traceLevel + 1);
 
         $this->delete_cache($this->_table, $where);
@@ -390,7 +390,7 @@ final class Mysql
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
-        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($this->_having) $obj->having($this->_having);
         if ($where) $obj->where($where);
@@ -460,7 +460,7 @@ final class Mysql
         if ($where) $obj->where($where);
         if (isset($this->groupKey)) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
-        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->_having) $obj->having($this->_having);
 
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
@@ -532,7 +532,7 @@ final class Mysql
         $obj->protect($this->_protect);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
+//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
 
         if ($where) $obj->where($where);
         if (isset($this->groupKey)) $obj->group($this->groupKey);
