@@ -27,7 +27,6 @@ final class Mysql
     private $_cache;       //缓存指令
     private int $_tranIndex = 0;       //事务
 
-    private bool $_debug_sql;
     private int $_traceLevel = 1;
 
     private array $_order = [];
@@ -37,27 +36,22 @@ final class Mysql
     private int $_count = 0;//执行统计总数，0为统计，0以上不统计
     private ?bool $_distinct = null;//消除重复行
 
-
     protected array $tableJoin = array();
     protected int $tableJoinCount = 0;
     protected array $forceIndex = [];
     protected array $selectKey = [];
-    protected $columnKey;
     protected string $groupKey;
     private string $sumKey;
+    protected $columnKey;
 
     use Helper;
 
     public function __construct(Pool $pool, array $conf, string $table)
     {
         $this->pool = &$pool;
-        $this->_table = $table;
         $this->config = $conf;
         $this->dbName = $conf['db'];
-
-        if (isset($conf['debug_sql'])) {
-            $this->_debug_sql = boolval($conf['debug_sql']);
-        }
+        if ($table) $this->_table = $table;
 
         if ($conf['cache'] ?? 0) {
             if (is_string($conf['cache'])) {
@@ -85,6 +79,30 @@ final class Mysql
     }
 
     /**
+     * 指定当前模型的表
+     * @param string $table
+     * @return $this
+     */
+    public function setTable(string $table): Mysql
+    {
+        $this->_table = $table;
+        return $this;
+    }
+
+    /**
+     * 需要 where或实际操作 之前执行，也就是在table之后
+     * MysqlObj之前
+     *
+     * @param bool $debug
+     * @return $this
+     */
+    public function debug(bool $debug): Mysql
+    {
+        $this->config['debug_sql'] = $debug;
+        return $this;
+    }
+
+    /**
      * @param int $trans_id
      * @param array $batch_SQLs
      * @return bool|Builder
@@ -93,16 +111,6 @@ final class Mysql
     public function trans(int $trans_id = 1, array $batch_SQLs = [])
     {
         return $this->MysqlObj($trans_id)->trans($trans_id, $batch_SQLs);
-    }
-
-    /**
-     * @param bool $df
-     * @return $this
-     */
-    public function debug_sql(bool $df = true): Mysql
-    {
-        $this->_debug_sql = $df;
-        return $this;
     }
 
     /**
@@ -171,17 +179,6 @@ final class Mysql
 
 
     /**
-     * 指定当前模型的表
-     * @param string $table
-     * @return $this
-     */
-    public function setTable(string $table): Mysql
-    {
-        $this->_table = $table;
-        return $this;
-    }
-
-    /**
      * 检查执行结果，所有增删改查的结果都不会是字串，所以，如果是字串，则表示出错了
      * 非字串，即不是json格式的错误内容，退出
      * @param string $action
@@ -215,7 +212,6 @@ final class Mysql
         $mysql = $this->MysqlObj(0, 1);
         $data = $full ? $data : $this->_FillField($mysql->dbName, $this->_table, $data);
         $obj = $mysql->table($this->_table, $this->_protect);
-//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         $val = $obj->insert($data, $replace, $this->_traceLevel + 1);
 
         $ck = $this->checkRunData('insert', $val);
@@ -267,7 +263,6 @@ final class Mysql
 
         $mysql = $this->MysqlObj(0, 1);
         $obj = $mysql->table($this->_table, $this->_protect);
-//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         $val = $obj->where($where)->delete($this->_traceLevel + 1);
 
         $this->delete_cache($this->_table, $where);
@@ -293,7 +288,6 @@ final class Mysql
         $mysql = $this->MysqlObj(0, 1);
 
         $obj = $mysql->table($this->_table, $this->_protect);
-//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         $val = $obj->where($where)->update($data, true, $this->_traceLevel + 1);
 
         $this->delete_cache($this->_table, $where);
@@ -390,7 +384,6 @@ final class Mysql
         if (!empty($this->tableJoin)) {
             foreach ($this->tableJoin as $join) $obj->join(...$join);
         }
-//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($this->_having) $obj->having($this->_having);
         if ($where) $obj->where($where);
@@ -460,7 +453,6 @@ final class Mysql
         if ($where) $obj->where($where);
         if (isset($this->groupKey)) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
-//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
         if ($this->_having) $obj->having($this->_having);
 
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
@@ -532,7 +524,6 @@ final class Mysql
         $obj->protect($this->_protect);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
-//        if (isset($this->_debug_sql)) $obj->debug_sql($this->_debug_sql);
 
         if ($where) $obj->where($where);
         if (isset($this->groupKey)) $obj->group($this->groupKey);

@@ -83,7 +83,7 @@ final class Pool
         $conf = $this->config['mysql'] ?? null;
         if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mysql)项');
 
-        return $this->_mysql = (new Mysql($this, $conf, $table))->setTable($table);
+        return $this->_mysql = (new Mysql($this, $conf, $table));
     }
 
     public function redis(int $dbIndex): Redis

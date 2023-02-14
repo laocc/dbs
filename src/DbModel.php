@@ -160,7 +160,7 @@ abstract class DbModel extends Library
      * @param string|null $table
      * @return Mysql
      */
-    final public function table(string $table = null): Mysql
+    final public function table(string $table = ''): Mysql
     {
         return $this->_controller->_pool->mysql($table);
     }

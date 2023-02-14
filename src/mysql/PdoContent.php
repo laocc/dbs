@@ -22,7 +22,7 @@ final class PdoContent
     private int $transID;
     public string $dbName;
     public array $_error = array();//每个连接的错误信息
-    public bool $_debug_sql;
+    public bool $_debug_sql = false;
 
     /**
      * PdoContent constructor.
@@ -181,10 +181,10 @@ final class PdoContent
     /**
      * 从SQL语句中提取该语句的执行性质
      * @param string $sql
-     * @return mixed
+     * @return string
      * @throws Error
      */
-    public function sqlAction(string $sql)
+    public function sqlAction(string $sql): string
     {
         if (preg_match('/^(select|insert|replace|update|delete|alter|analyze|call)\s+.+/is', trim($sql), $matches)) {
             return strtolower($matches[1]);
