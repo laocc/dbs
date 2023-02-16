@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\mysql;
 
 use esp\error\Error;
+use function esp\core\esp_error;
 use function esp\helper\root;
 
 /**
@@ -30,13 +31,14 @@ trait Helper
      */
     final public function PRI(string $table = null): string
     {
+//        if (defined('_DISABLE_INFORMATION_SCHEMA') && _DISABLE_INFORMATION_SCHEMA) esp_error('_DISABLE_INFORMATION_SCHEMA', '禁用查询表字段');
         if (is_null($table)) $table = $this->_table;
         if (!$table) throw new Error('Unable to get table name');
         $mysql = $this->MysqlObj();
         $val = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
             ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
-            ->get()->row();
+            ->get(0, 3)->row();
         if (empty($val)) return '';
         return $val['COLUMN_NAME'];
     }
@@ -91,7 +93,7 @@ trait Helper
             ->select('column_name as name,COLUMN_DEFAULT as default,column_type as type,column_key as key,column_comment as comment')
             ->where(['table_schema' => $this->dbName, 'table_name' => $table])
             ->order('ORDINAL_POSITION', 'asc')
-            ->get()->rows();
+            ->get(0, 3)->rows();
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         if ($html) {
             $table = [];
@@ -115,7 +117,7 @@ trait Helper
     {
         $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.TABLES')
             ->select("TABLE_NAME as name,DATA_LENGTH as data,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
-            ->where(['TABLE_SCHEMA' => $this->dbName])->get()->rows();
+            ->where(['TABLE_SCHEMA' => $this->dbName])->get(0, 3)->rows();
 
         if (empty($val)) return [];
         if ($html) {
@@ -145,7 +147,7 @@ trait Helper
 
         $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $this->dbName, 'table_name' => $table])
-            ->get()->rows();
+            ->get(0, 3)->rows();
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         return $val;
     }
@@ -178,7 +180,7 @@ trait Helper
         $mysql = $this->MysqlObj();
         $val = $mysql->table('INFORMATION_SCHEMA.TABLES')
             ->select('TABLE_NAME')
-            ->where(['TABLE_SCHEMA' => $this->dbName])->get()->rows();
+            ->where(['TABLE_SCHEMA' => $this->dbName])->get(0, 3)->rows();
         $tables = [];
         foreach ($val as $table) {
             $tab = ucfirst(substr($table['TABLE_NAME'], 3)) . 'Model';
@@ -189,7 +191,7 @@ trait Helper
                         'table_schema' => $this->dbName,
                         'table_name' => $table['TABLE_NAME'],
                         'EXTRA' => 'auto_increment'])
-                    ->get()->row();
+                    ->get(0, 3)->row();
                 $namespace = str_replace('/', '\\', trim($path, '/'));
                 $php = <<<PHP
 <?php
@@ -219,11 +221,11 @@ PHP;
     {
         $table = $this->_table;
         $data = $this->hash($table)->get('_title');
-        if (!empty($data)) return $data;
+        if (!empty($data)) return [];
         if (!$table) throw new Error('Unable to get table name');
         $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')
-            ->where(['table_name' => $table])->get()->rows();
+            ->where(['table_name' => $table])->get(0, 3)->rows();
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         $this->hash($table)->set('_title', $val);
         return $val;
@@ -244,11 +246,7 @@ PHP;
             $field = $this->fields($table);
             $s = $this->hash($table)->set('_field', $field);
         }
-        if (isset($data[0])) {
-            $rowData = $data[0];
-        } else {
-            $rowData = $data;
-        }
+        $rowData = $data[0] ?? $data;
 
         foreach ($field as $i => $rs) {
             if (strtolower($rs['EXTRA']) === 'auto_increment') continue;//自增字段
@@ -282,11 +280,7 @@ PHP;
             $field = $this->fields($table);
             $this->hash($table)->set('_field', $field);
         }
-        if (isset($data[0])) {
-            $rowData = $data[0];
-        } else {
-            $rowData = $data;
-        }
+        $rowData = $data[0] ?? $data;
 
         foreach ($field as $i => $rs) {
             if (strtolower($rs['EXTRA']) === 'auto_increment') continue;//自增字段
