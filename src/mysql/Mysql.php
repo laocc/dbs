@@ -362,16 +362,16 @@ final class Mysql
         if ($this->_cache and $this->cacheHashKey) {
             $data = $this->pool->cache($this->cacheHashKey)->table($this->_table)->read($where);
             if (!empty($data)) {
-                $this->clear_initial();
-                $this->_cache = null;
-
                 if (isset($this->pool->counter)) {
+                    foreach ($where as $k => &$v) $v = (is_numeric($v) ? '%d' : '%s');
                     $sql = "HitCache({$this->_table}) " . json_encode($where, 320);
                     $this->pool->counter->recodeMysql('select', $sql, $this->_traceLevel + 1);
                 }
-
+                $this->clear_initial();
+                $this->_cache = null;
                 return $data;
             }
+            $this->selectKey = [];//调了缓存，就删除select项
         }
         $table = $this->_table;
 
