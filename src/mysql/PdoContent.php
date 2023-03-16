@@ -10,7 +10,7 @@ use PDOException;
 
 final class PdoContent
 {
-    private Pool $pool;
+    public Pool $pool;
     private array $_pool = [];//进程级的连接池，$master，$slave
 
     private array $_CONF;//配置定义

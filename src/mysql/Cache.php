@@ -29,26 +29,35 @@ final class Cache
 
     public function get(string $key)
     {
-        $mdKey = ($this->table . '_' . $key);
-        return $this->redis->hGet($this->hashKey, $mdKey);
+        return $this->redis->hGet($this->hashKey, "{$this->table}_{$key}");
     }
-
-    public function set(string $key, $value)
-    {
-        $mdKey = ($this->table . '_' . $key);
-        return $this->redis->hSet($this->hashKey, $mdKey, $value);
-    }
-
 
     /**
+     * @param string $key
+     * @param $value
+     * @return bool|int|Redis
+     */
+    public function set(string $key, $value)
+    {
+        return $this->redis->hSet($this->hashKey, "{$this->table}_{$key}", $value);
+    }
+
+    public function del(string $key)
+    {
+        return $this->redis->hDel($this->hashKey, "{$this->table}_{$key}");
+    }
+
+    /**
+     * 与get不同之处：
+     * get为直接指定缓存key读取，与set()对应
+     * read根据sql查询时where作为键，这是Mysql类中调用的方法，与save()对应
+     *
      * @param array $where
      * @return false|string|null
      */
     public function read(array $where)
     {
-        $key = array_keys($where)[0] ?? null;
-        if (!$key) return null;
-        $mdKey = md5($this->table . $key . var_export($where[$key], true));
+        $mdKey = $this->table . '_' . sha1(var_export($where, true));
         return $this->redis->hGet($this->hashKey, $mdKey);
     }
 
@@ -59,9 +68,7 @@ final class Cache
      */
     public function save(array $where, $data)
     {
-        $key = array_keys($where)[0] ?? null;
-        if (!$key) return false;
-        $mdKey = md5($this->table . $key . var_export($where[$key], true));
+        $mdKey = $this->table . '_' . sha1(var_export($where, true));
         return $this->redis->hSet($this->hashKey, $mdKey, $data);
     }
 
@@ -74,17 +81,23 @@ final class Cache
      */
     public function delete(array $where)
     {
-        $mdKey = [];
-        foreach ($where as $key => $val) {
-            if (is_array($val)) {
-                foreach ($val as $v) {
-                    $mdKey[] = md5($this->table . $key . var_export($v, true));
+        if (isset($where[0])) {
+            $mdKey = [];
+            foreach ($where as $key => $val) {
+                if (is_array($val)) {
+                    foreach ($val as $v) {
+                        $mdKey[] = $this->table . '_' . sha1(var_export($v, true));
+                    }
+                } else {
+                    $mdKey[] = $this->table . '_' . sha1(var_export($val, true));
                 }
-            } else {
-                $mdKey[] = md5($this->table . $key . var_export($val, true));
             }
+            if (!empty($mdKey)) return $this->redis->hDel($this->hashKey, ...$mdKey);
+        } else {
+            $mdKey = $this->table . '_' . sha1(var_export($where, true));
+            return $this->redis->hDel($this->hashKey, $mdKey);
         }
-        if (!empty($mdKey)) return $this->redis->hDel($this->hashKey, ...$mdKey);
+
         return 0;
     }
 

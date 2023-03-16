@@ -70,12 +70,20 @@ final class Pool
         return true;
     }
 
+    /**
+     * @return Cache
+     */
     public function cache(): Cache
     {
         if (isset($this->_cache)) return $this->_cache;
         return $this->_cache = new Cache($this->controller->_config->_Redis);
     }
 
+    /**
+     * @param string $table
+     * @return Mysql
+     * @throws Error
+     */
     public function mysql(string $table): Mysql
     {
         if (isset($this->_mysql)) return $this->_mysql->setTable($table);
@@ -86,6 +94,11 @@ final class Pool
         return $this->_mysql = (new Mysql($this, $conf, $table));
     }
 
+    /**
+     * @param int $dbIndex
+     * @return Redis
+     * @throws Error
+     */
     public function redis(int $dbIndex): Redis
     {
         if (isset($this->_redis)) return $this->_redis;

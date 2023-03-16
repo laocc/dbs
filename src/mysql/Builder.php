@@ -27,6 +27,7 @@ final class Builder
 
     private array $_join = array();//保存已经应用的join字符串，数组内保存解析好的完整字符串
     private array $_joinTable = array();
+    private array $_cache = array();
 
     private string $_order_by = '';//保存已经解析的排序字符串
 
@@ -81,6 +82,7 @@ final class Builder
         $this->_distinct = false;
         $this->_protect = true;
         $this->_gzLevel = 5;
+        $this->_cache = [];
 
         $this->_prepare = $this->_param = $this->_dim_param;
         $this->_bindKV = $this->_param_data = array();
@@ -107,6 +109,21 @@ final class Builder
         return $this;
     }
 
+    /**
+     * 同时删除缓存，where应该与update/delete的条件相同
+     *
+     * @param array $cWhere
+     * @return $this
+     */
+    public function cache(array $cWhere)
+    {
+        $this->_cache[] = [
+            'table' => $this->_table,
+            'where' => $cWhere
+        ];
+        return $this;
+    }
+
 
     /**
      * 事务结束，提交。
@@ -117,6 +134,14 @@ final class Builder
     {
         $val = $this->_PDO->trans_commit($this->_Trans_ID);
         if ($rest && is_array($val)) return $val['error'];
+
+        if (!empty($this->_cache)) {
+            $hash = $this->_PDO->pool->cache();
+            foreach ($this->_cache as $cache) {
+                $hash->table($cache['table'])->delete($cache['where']);
+            }
+        }
+
         return $val;
     }
 
