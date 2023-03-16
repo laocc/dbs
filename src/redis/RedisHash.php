@@ -7,8 +7,8 @@ use \Redis;
 
 class RedisHash
 {
-    private $redis;
-    private $table;
+    private Redis $redis;
+    private string $table;
 
     public function __construct(Redis $redis, string $key)
     {
@@ -19,7 +19,7 @@ class RedisHash
     /**
      * @return Redis
      */
-    public function redis()
+    public function redis(): Redis
     {
         return $this->redis;
     }
@@ -30,14 +30,14 @@ class RedisHash
      * @param $value
      * @return int
      */
-    public function set(string $hashKey, $value)
+    public function set(string $hashKey, $value): int
     {
         return $this->redis->hSet($this->table, $hashKey, $value);
     }
 
     /**
      * @param string $hashKey
-     * @return array|string|int
+     * @return Redis|string|null
      */
     public function get(string $hashKey)
     {
@@ -91,8 +91,7 @@ class RedisHash
      */
     public function all()
     {
-        $all = $this->redis->hGetAll($this->table);
-        return $all;
+        return $this->redis->hGetAll($this->table);
     }
 
 
@@ -100,7 +99,7 @@ class RedisHash
      * @param string $hashKey
      * @return bool
      */
-    public function exists(string $hashKey)
+    public function exists(string $hashKey): bool
     {
         return $this->redis->hExists($this->table, $hashKey);
     }
@@ -110,7 +109,7 @@ class RedisHash
      * @param int $value
      * @return int
      */
-    public function add(string $hashKey, int $value = 1)
+    public function add(string $hashKey, int $value = 1): int
     {
         return $this->redis->hIncrBy($this->table, $hashKey, $value);
     }
@@ -135,8 +134,7 @@ class RedisHash
      */
     public function mGet(array $hashKeys)
     {
-        $all = $this->redis->hMGet($this->table, $hashKeys);
-        return $all;
+        return $this->redis->hMGet($this->table, $hashKeys);
     }
 
     /**
@@ -148,7 +146,7 @@ class RedisHash
      * @param $value
      * @return int
      */
-    public function hSet(string $hashKey, $value)
+    public function hSet(string $hashKey, $value): int
     {
         return $this->redis->hSet($this->table, $hashKey, ($value));
     }

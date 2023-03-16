@@ -11,10 +11,10 @@ final class Cache
     private string $table = '';
     private Redis $redis;
 
-    public function __construct(Redis $redis, string $db)
+    public function __construct(Redis $redis)
     {
         $this->redis = &$redis;
-        $this->hashKey = "mysql_buffer_{$db}";
+        $this->hashKey = _UNIQUE_KEY . '_MYSQL_CACHE_';
     }
 
     /**

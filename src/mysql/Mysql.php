@@ -230,7 +230,7 @@ final class Mysql
     {
         if ($this->_cache and $this->cacheHashKey) {
             if (is_array($this->_cache)) $where += $this->_cache;
-            $this->pool->cache($this->cacheHashKey)->table($table)->delete($where);
+            $this->pool->cache()->table($table)->delete($where);
             $this->_cache = null;
         }
 
@@ -360,7 +360,7 @@ final class Mysql
         }
 
         if ($this->_cache and $this->cacheHashKey) {
-            $data = $this->pool->cache($this->cacheHashKey)->table($this->_table)->read($where);
+            $data = $this->pool->cache()->table($this->_table)->read($where);
             if (!empty($data)) {
                 if (isset($this->pool->counter)) {
                     foreach ($where as $k => &$v) $v = (is_numeric($v) ? '%d' : '%s');
@@ -416,7 +416,7 @@ final class Mysql
         }
 
         if ($this->_cache and $this->cacheHashKey) {
-            $this->pool->cache($this->cacheHashKey)->table($table)->save($where, $val);
+            $this->pool->cache()->table($table)->save($where, $val);
             $this->_cache = null;
         }
 

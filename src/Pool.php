@@ -70,11 +70,10 @@ final class Pool
         return true;
     }
 
-    public function cache(string $hashKey): Cache
+    public function cache(): Cache
     {
         if (isset($this->_cache)) return $this->_cache;
-        return $this->_cache = new Cache($this->controller->_config->_Redis, $hashKey);
-//        return $this->_cache = new Cache($this->redis(0)->redis, $hashKey);
+        return $this->_cache = new Cache($this->controller->_config->_Redis);
     }
 
     public function mysql(string $table): Mysql
