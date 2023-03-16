@@ -113,12 +113,12 @@ final class Builder
      * 同时删除缓存，where应该与update/delete的条件相同
      *
      * @param array $cWhere
-     * @return $this
+     * @return Builder
      */
-    public function cache(array $cWhere)
+    public function cache(array $cWhere): Builder
     {
         $this->_cache[] = [
-            'table' => $this->_table,
+            'table' => trim($this->_table, '`'),
             'where' => $cWhere
         ];
         return $this;
