@@ -210,7 +210,7 @@ final class Mysql
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $mysql = $this->MysqlObj(0, 1);
-        $data = $full ? $data : $this->_FillField($mysql->dbName, $this->_table, $data);
+        $data = $full ? $data : $this->_FillField($this->_table, $data);
         $obj = $mysql->table($this->_table, $this->_protect);
         $val = $obj->insert($data, $replace, $this->_traceLevel + 1);
 

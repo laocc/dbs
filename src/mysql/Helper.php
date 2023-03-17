@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\mysql;
 
 use esp\error\Error;
+use models\AdminModel;
 use function esp\core\esp_error;
 use function esp\helper\root;
 
@@ -29,7 +30,7 @@ trait Helper
      * @param string|null $table
      * @return string
      */
-    final public function PRI(string $table = null): string
+    public function PRI(string $table = null): string
     {
 //        if (defined('_DISABLE_INFORMATION_SCHEMA') && _DISABLE_INFORMATION_SCHEMA) esp_error('_DISABLE_INFORMATION_SCHEMA', '禁用查询表字段');
         if (is_null($table)) $table = $this->_table;
@@ -50,7 +51,7 @@ trait Helper
      * @return bool|int|string|null
      * @throws Error
      */
-    final public function increment(string $table, int $id = 1)
+    public function increment(string $table, int $id = 1)
     {
         //TRUNCATE TABLE dbAdmin;
         //alter table users AUTO_INCREMENT=10000;
@@ -64,7 +65,7 @@ trait Helper
      * @return bool|mixed
      * @throws Error
      */
-    final public function analyze(string $table)
+    public function analyze(string $table)
     {
         $this->hash($table)->set('_field', []);
         $this->hash($table)->set('_title', []);
@@ -83,7 +84,7 @@ trait Helper
      * @param bool $html
      * @return array|string
      */
-    final public function desc($table = null, bool $html = false)
+    public function desc($table = null, bool $html = false)
     {
         if (is_bool($table)) list($table, $html) = [null, $table];
         $table = $table ?: $this->_table;
@@ -113,7 +114,7 @@ trait Helper
      * @return array|mixed|string
      * @throws Error
      */
-    final public function tables(bool $html = false)
+    public function tables(bool $html = false)
     {
         $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.TABLES')
             ->select("TABLE_NAME as name,DATA_LENGTH as data,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
@@ -140,7 +141,7 @@ trait Helper
      * @return mixed
      * @throws Error
      */
-    final public function fields(string $table = null)
+    public function fields(string $table = null)
     {
         $table = $table ?: $this->_table;
         if (!$table) throw new Error('Unable to get table name');
@@ -164,16 +165,17 @@ trait Helper
      *
      * @throws Error
      */
-    final public function createModel(string $class)
+    public function createModel(string $path, string $parent)
     {
 //        $self = explode('\\', get_parent_class($this));
-        if (strpos($class, 'Object')) return '请使用->createModel(get_parent_class($modName))方式调用';
+//        if (strpos($class, 'Object')) return '请使用->createModel(get_parent_class($modName))方式调用';
 
-        $self = explode('\\', $class);
-        $parent = array_pop($self);
-        if ($parent === 'Model') return 'Model实例应该有个中间类，比如_Base，不应该直接引自Model类，若确需这样，请手工创建。';
-        if (empty($self)) return 'Model实例应该引用自Model>_Base';
-        $path = '/' . implode('/', $self);
+//        $self = explode('\\', $class);
+//        $parent = array_pop($self);
+//        if ($parent === 'Model') return 'Model实例应该有个中间类，比如_Base，不应该直接引自Model类，若确需这样，请手工创建。';
+//        if (empty($self)) return 'Model实例应该引用自Model>_Base';
+//        $path = '/' . implode('/', $self);
+//        $parent = '_BaseModel';
         $root = root($path);
         if (!is_dir($root)) return "请先创建[{$root}]目录";
 
@@ -217,7 +219,7 @@ PHP;
      * @return array
      * @throws Error
      */
-    final public function title(): array
+    public function title(): array
     {
         $table = $this->_table;
         $data = $this->hash($table)->get('_title');
@@ -233,13 +235,12 @@ PHP;
 
     /**
      * 新增行时，填充字段
-     * @param string $dbName
      * @param string $table
      * @param array $data
      * @return array|mixed
      * @throws Error
      */
-    final protected function _FillField(string $dbName, string $table, array $data)
+    protected function _FillField(string $table, array $data)
     {
         $field = $this->hash($table)->get('_field');
         if (empty($field)) {
@@ -273,7 +274,7 @@ PHP;
     /**
      * @throws Error
      */
-    final protected function _AllField(string $dbName, string $table, array $data)
+    protected function _AllField(string $table, array $data)
     {
         $field = $this->hash($table)->get('_field');
         if (empty($field)) {
@@ -303,4 +304,27 @@ PHP;
         }
     }
 
+    public function printTableFields(string $table, string $key = 'data')
+    {
+        if (!$table) exit("未指定表名\n");
+        if (!$key) $key = 'data';
+
+        /**
+         * select COLUMN_NAME,COLUMN_COMMENT from INFORMATION_SCHEMA.Columns
+         * where TABLE_SCHEMA='' and TABLE_NAME=''
+         */
+        $fields = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
+            ->where(['TABLE_SCHEMA' => $this->dbName, 'TABLE_NAME' => $table])->get()->rows();
+        echo "\n";
+        echo "\${$key} = [];\n";
+        foreach ($fields as $fs) {
+            if ($fs['COLUMN_KEY'] === 'PRI') continue;
+            if ($fs['COLUMN_DEFAULT']) {
+                echo "\${$key}['{$fs['COLUMN_NAME']}'] = '{$fs['COLUMN_DEFAULT']}';//{$fs['COLUMN_COMMENT']}\n";
+            } else {
+                echo "\${$key}['{$fs['COLUMN_NAME']}'] = 000000;//{$fs['COLUMN_COMMENT']}\n";
+            }
+        }
+        echo "\n";
+    }
 }
