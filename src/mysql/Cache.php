@@ -35,16 +35,20 @@ final class Cache
     /**
      * @param string $key
      * @param $value
-     * @return bool|int|Redis
+     * @return int
      */
-    public function set(string $key, $value)
+    public function set(string $key, $value): int
     {
-        return $this->redis->hSet($this->hashKey, "{$this->table}_{$key}", $value);
+        return (int)$this->redis->hSet($this->hashKey, "{$this->table}_{$key}", $value);
     }
 
-    public function del(string $key)
+    /**
+     * @param string $key
+     * @return int
+     */
+    public function del(string $key): int
     {
-        return $this->redis->hDel($this->hashKey, "{$this->table}_{$key}");
+        return (int)$this->redis->hDel($this->hashKey, "{$this->table}_{$key}");
     }
 
     /**
@@ -66,10 +70,10 @@ final class Cache
      * @param $data
      * @return int
      */
-    public function save(array $where, $data)
+    public function save(array $where, $data): int
     {
         $mdKey = $this->table . '_' . sha1(var_export($where, true));
-        return $this->redis->hSet($this->hashKey, $mdKey, $data);
+        return (int)$this->redis->hSet($this->hashKey, $mdKey, $data);
     }
 
 
@@ -77,27 +81,23 @@ final class Cache
      * key存在于where，即删除符合该key的值
      *
      * @param array $where
-     * @return bool|int
+     * @return int
      */
-    public function delete(array $where)
+    public function delete(array ...$where): int
     {
-        if (isset($where[0])) {
-            $mdKey = [];
-            foreach ($where as $key => $val) {
-                if (is_array($val)) {
-                    foreach ($val as $v) {
-                        $mdKey[] = $this->table . '_' . sha1(var_export($v, true));
-                    }
-                } else {
-                    $mdKey[] = $this->table . '_' . sha1(var_export($val, true));
+        $mdKey = [];
+        foreach ($where as $val) {
+            if (is_array($val)) {
+                foreach ($val as $v) {
+                    $mdKey[] = $this->table . '_' . sha1(var_export($v, true));
                 }
+            } else {
+                $mdKey[] = $this->table . '_' . sha1(var_export($val, true));
             }
-            if (!empty($mdKey)) return $this->redis->hDel($this->hashKey, ...$mdKey);
-        } else {
-            $mdKey = $this->table . '_' . sha1(var_export($where, true));
-            return $this->redis->hDel($this->hashKey, $mdKey);
         }
-
+        if (!empty($mdKey)) {
+            return (int)$this->redis->hDel($this->hashKey, ...$mdKey);
+        }
         return 0;
     }
 
