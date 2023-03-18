@@ -88,8 +88,8 @@ final class Cache
         $mdKey = [];
         foreach ($where as $val) {
             if (is_array($val)) {
-                foreach ($val as $v) {
-                    $mdKey[] = $this->table . '_' . sha1(var_export($v, true));
+                foreach ($val as $k => $v) {
+                    $mdKey[] = $this->table . '_' . sha1(var_export([$k => $v], true));
                 }
             } else {
                 $mdKey[] = $this->table . '_' . sha1(var_export($val, true));
