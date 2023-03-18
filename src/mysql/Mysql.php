@@ -230,6 +230,13 @@ final class Mysql
     {
         if ($this->_cache and $this->cacheHashKey) {
             if (is_array($this->_cache)) $where += $this->_cache;
+
+            $this->pool->debug([
+                'cache' => $this->cacheHashKey,
+                'sql' => 'update/delete' . " * from {$table} where ...",
+                'params' => json_encode($where, 320)
+            ], $this->_traceLevel + 1);
+
             $this->pool->cache()->table($table)->delete($where);
             $this->_cache = null;
         }
@@ -362,11 +369,19 @@ final class Mysql
         if ($this->_cache and $this->cacheHashKey) {
             $data = $this->pool->cache()->table($this->_table)->read($where);
             if (!empty($data)) {
+
+                $this->pool->debug([
+                    'cache' => $this->cacheHashKey,
+                    'sql' => 'select' . " * from {$this->_table} where ...",
+                    'params' => json_encode($where, 320)
+                ], $this->_traceLevel + 1);
+
                 if (isset($this->pool->counter)) {
                     foreach ($where as $k => &$v) $v = (is_numeric($v) ? '%d' : '%s');
                     $sql = "HitCache({$this->_table}) " . json_encode($where, 320);
                     $this->pool->counter->recodeMysql('select', $sql, $this->_traceLevel + 1);
                 }
+
                 $this->clear_initial();
                 $this->_cache = null;
                 return $data;
@@ -416,6 +431,13 @@ final class Mysql
         }
 
         if ($this->_cache and $this->cacheHashKey) {
+
+            $this->pool->debug([
+                'cache' => $this->cacheHashKey,
+                'sql' => "save cache from {$table} where ...",
+                'params' => json_encode($where, 320)
+            ], $this->_traceLevel + 1);
+
             $this->pool->cache()->table($table)->save($where, $val);
             $this->_cache = null;
         }
