@@ -33,6 +33,18 @@ final class Cache
     }
 
     /**
+     * 整型增加
+     *
+     * @param string $key
+     * @param int $value
+     * @return int
+     */
+    public function incr(string $key, int $value = 1): int
+    {
+        return (int)$this->redis->hIncrBy($this->hashKey, "{$this->table}_{$key}", $value);
+    }
+
+    /**
      * @param string $key
      * @param $value
      * @return int

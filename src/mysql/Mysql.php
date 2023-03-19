@@ -17,14 +17,14 @@ final class Mysql
     private Cache $Cache;
 
     private array $config;
-    private $cacheHashKey;
+
+    private bool $_cache = false;
 
     private array $_MysqlPool = array();
 
     public string $dbName;//库名
     public string $_table = '';//表名，创建对象时，或明确指定当前模型的对应表名
 
-    private $_cache;       //缓存指令
     private int $_tranIndex = 0;       //事务
 
     private int $_traceLevel = 1;
@@ -34,10 +34,9 @@ final class Mysql
     private string $_having = '';//having
     private bool $_protect = true;//是否加保护符，默认加
     private int $_count = 0;//执行统计总数，0为统计，0以上不统计
-    private ?bool $_distinct = null;//消除重复行
+    private bool $_distinct = false;//消除重复行
 
     protected array $tableJoin = array();
-    protected int $tableJoinCount = 0;
     protected array $forceIndex = [];
     protected array $selectKey = [];
     protected string $groupKey;
@@ -52,14 +51,6 @@ final class Mysql
         $this->config = $conf;
         $this->dbName = $conf['db'];
         if ($table) $this->_table = $table;
-
-        if ($conf['cache'] ?? 0) {
-            if (is_string($conf['cache'])) {
-                $this->cacheHashKey = $conf['cache'];
-            } else {
-                $this->cacheHashKey = $conf['db'];
-            }
-        }
     }
 
 
@@ -121,7 +112,7 @@ final class Mysql
         //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
         $this->_table = '';
         $this->_count = 0;
-        $this->_distinct = null;
+        $this->_distinct = false;
         $this->_protect = true;
         $this->_having = '';
         $this->_order = [];
@@ -167,12 +158,11 @@ final class Mysql
      * $this->delete(['artID'=>11]);              不删除，因为没指定
      *
      *
-     * @param null $run
+     * @param bool|null $run
      * @return $this
      */
-    public function cache($run = null): Mysql
+    public function cache(bool $run = true, array $patchKeys = null): Mysql
     {
-        if (is_null($run)) $run = true;
         $this->_cache = $run;
         return $this;
     }
@@ -228,17 +218,14 @@ final class Mysql
      */
     public function delete_cache(string $table, array $where): Mysql
     {
-        if ($this->_cache and $this->cacheHashKey) {
-            if (is_array($this->_cache)) $where += $this->_cache;
-
+        if ($this->_cache) {
             $this->pool->debug([
-                'cache' => $this->cacheHashKey,
+                'cache' => 1,
                 'sql' => 'update/delete' . " * from {$table} where ...",
                 'params' => json_encode($where, 320)
             ], $this->_traceLevel + 1);
-
             $this->pool->cache()->table($table)->delete($where);
-            $this->_cache = null;
+            $this->_cache = false;
         }
 
         return $this;
@@ -366,12 +353,12 @@ final class Mysql
             $where = [$this->PRI() => intval($where)];
         }
 
-        if ($this->_cache and $this->cacheHashKey) {
+        if ($this->_cach) {
             $data = $this->pool->cache()->table($this->_table)->read($where);
             if (!empty($data)) {
 
                 $this->pool->debug([
-                    'cache' => $this->cacheHashKey,
+                    'cache' => 1,
                     'sql' => 'select' . " * from {$this->_table} where ...",
                     'params' => json_encode($where, 320)
                 ], $this->_traceLevel + 1);
@@ -383,7 +370,7 @@ final class Mysql
                 }
 
                 $this->clear_initial();
-                $this->_cache = null;
+                $this->_cache = false;
                 return $data;
             }
             $this->selectKey = [];//调了缓存，就删除select项
@@ -403,7 +390,7 @@ final class Mysql
         if ($this->_having) $obj->having($this->_having);
         if ($where) $obj->where($where);
         if (isset($this->groupKey)) $obj->group($this->groupKey);
-        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
+        if ($this->_distinct) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
@@ -420,26 +407,26 @@ final class Mysql
 
         $ck = $this->checkRunData('get', $data);
         if ($ck) {
-            $this->_cache = null;
+            $this->_cache = false;
             return $ck;
         }
 
         $val = $data->row($this->columnKey, $_decode);
         if ($val === false or $val === null) {
-            $this->_cache = null;
+            $this->_cache = false;
             return null;
         }
 
-        if ($this->_cache and $this->cacheHashKey) {
+        if ($this->_cache) {
 
             $this->pool->debug([
-                'cache' => $this->cacheHashKey,
+                'cache' => 1,
                 'sql' => "save cache from {$table} where ...",
                 'params' => json_encode($where, 320)
             ], $this->_traceLevel + 1);
 
             $this->pool->cache()->table($table)->save($where, $val);
-            $this->_cache = null;
+            $this->_cache = false;
         }
 
         return $val;
@@ -476,8 +463,7 @@ final class Mysql
         if (isset($this->groupKey)) $obj->group($this->groupKey);
         if ($this->forceIndex) $obj->force($this->forceIndex);
         if ($this->_having) $obj->having($this->_having);
-
-        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
+        if ($this->_distinct) $obj->distinct($this->_distinct);
 
         if (!empty($this->_order)) {
             foreach ($this->_order as $k => $a) {
@@ -545,7 +531,7 @@ final class Mysql
         }
         $obj->protect($this->_protect);
         if ($this->forceIndex) $obj->force($this->forceIndex);
-        if (is_bool($this->_distinct)) $obj->distinct($this->_distinct);
+        if ($this->_distinct) $obj->distinct($this->_distinct);
 
         if ($where) $obj->where($where);
         if (isset($this->groupKey)) $obj->group($this->groupKey);

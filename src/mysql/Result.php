@@ -9,9 +9,9 @@ use function esp\helper\numbers;
 final class Result
 {
     private PDOStatement $rs;//结果对象
-    private int $count = 0;
+    private int $count;
     private string $sql;
-    private array $sum = [];
+    private array $sum;
 
     /**
      * PdoResult constructor.

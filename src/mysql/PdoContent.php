@@ -184,7 +184,7 @@ final class PdoContent
      * @return string
      * @throws Error
      */
-    public function sqlAction(string $sql): string
+    private function sqlAction(string $sql): string
     {
         if (preg_match('/^(select|insert|replace|update|delete|alter|analyze|call)\s+.+/is', trim($sql), $matches)) {
             return strtolower($matches[1]);
@@ -403,7 +403,8 @@ final class PdoContent
                 'limit' => 0,
                 'bind' => [],
                 'trans_id' => 0,
-                'action' => $this->sqlAction($sql),
+//                'action' => $this->sqlAction($sql),
+                'action' => strtolower(substr($sql, 0, strpos($sql, ' '))),
             ];
         }
 
@@ -793,11 +794,6 @@ final class PdoContent
     }
 
     /**
-     * ---------------------------------------------------------------------------------------------
-     */
-
-
-    /**
      * 创建事务开始，或直接执行批量事务
      * @param int $trans_id
      * @param array $batch_SQLs
@@ -839,7 +835,6 @@ final class PdoContent
          */
         if (!empty($batch_SQLs)) {
             foreach ($batch_SQLs as $sql) {
-                $action = $this->sqlAction($sql);
                 $option = [
                     'param' => false,
                     'prepare' => true,
@@ -847,7 +842,7 @@ final class PdoContent
                     'fetch' => 0,
                     'bind' => [],
                     'trans_id' => $trans_id,
-                    'action' => $action,
+                    'action' => strtolower(substr($sql, 0, strpos($sql, ' '))),
                 ];
                 $this->query($sql, $option, $CONN, 1);
             }
