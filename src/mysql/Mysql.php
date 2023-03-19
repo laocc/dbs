@@ -151,25 +151,31 @@ final class Mysql
      * 若只有artID可以被缓存，则需要调用：$this->cache(true)->delete(['artID'=>10]);
      *
      * 若需要执行$this->delete(['artID>'=>10]);这种指令，被删除的目标数据可能存在多行，此时若也要删除对应不同artTitle的缓存
-     * 则需要采用：$this->cache(['artTitle'=>['test','abc','def']])->delete(['artID>'=>10]);
-     * 也就是说 artTitle 为一个数组
+     * 则需要采用：$this->cache([['artTitle'=>'abc'],['artTitle'=>'def']])->delete(['artID>'=>10]);
+     * 也就是多个 ['artTitle'=>'abc'] 组成的三维数组
      *
      * 作用期间，连续执行的时候：
      * $this->cache(true)->delete(['artID'=>10]); 会删除缓存
      * $this->delete(['artID'=>11]);              不删除，因为没指定
      *
      *
-     * @param $run
+     * @param void $run
      * @return $this
      */
-    public function cache($run): Mysql
+    public function cache($run = true): Mysql
     {
         if ($run === false) {
             $this->_cache = false;
         } else {
             $this->_cache = true;
             $this->_cache_patch = [];
-            if (is_array($run)) $this->_cache_patch = $run;
+            if (is_array($run)) {
+                if (isset($run[0])) {
+                    $this->_cache_patch = $run;
+                } else {
+                    $this->_cache_patch = [$run];
+                }
+            }
         }
         return $this;
     }
@@ -232,7 +238,7 @@ final class Mysql
                 'params' => json_encode($where, 320),
                 'patch' => json_encode($this->_cache_patch, 320),
             ], $this->_traceLevel + 1);
-            $this->pool->cache()->table($table)->delete($where, $this->_cache_patch);
+            $this->pool->cache()->table($table)->delete($where, ...$this->_cache_patch);
             $this->_cache = false;
             $this->_cache_patch = [];
         }
