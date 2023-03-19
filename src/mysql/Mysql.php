@@ -19,6 +19,7 @@ final class Mysql
     private array $config;
 
     private bool $_cache = false;
+    private array $_cache_patch = [];
 
     private array $_MysqlPool = array();
 
@@ -158,12 +159,18 @@ final class Mysql
      * $this->delete(['artID'=>11]);              不删除，因为没指定
      *
      *
-     * @param bool|null $run
+     * @param $run
      * @return $this
      */
-    public function cache(bool $run = true, array $patchKeys = null): Mysql
+    public function cache($run): Mysql
     {
-        $this->_cache = $run;
+        if ($run === false) {
+            $this->_cache = false;
+        } else {
+            $this->_cache = true;
+            $this->_cache_patch = [];
+            if (is_array($run)) $this->_cache_patch = $run;
+        }
         return $this;
     }
 
@@ -216,18 +223,19 @@ final class Mysql
      * @param array $where
      * @return $this
      */
-    public function delete_cache(string $table, array $where): Mysql
+    private function delete_cache(string $table, array $where): Mysql
     {
         if ($this->_cache) {
             $this->pool->debug([
                 'cache' => 1,
                 'sql' => 'update/delete' . " * from {$table} where ...",
-                'params' => json_encode($where, 320)
+                'params' => json_encode($where, 320),
+                'patch' => json_encode($this->_cache_patch, 320),
             ], $this->_traceLevel + 1);
-            $this->pool->cache()->table($table)->delete($where);
+            $this->pool->cache()->table($table)->delete($where, $this->_cache_patch);
             $this->_cache = false;
+            $this->_cache_patch = [];
         }
-
         return $this;
     }
 
@@ -353,7 +361,7 @@ final class Mysql
             $where = [$this->PRI() => intval($where)];
         }
 
-        if ($this->_cach) {
+        if ($this->_cache) {
             $data = $this->pool->cache()->table($this->_table)->read($where);
             if (!empty($data)) {
 
