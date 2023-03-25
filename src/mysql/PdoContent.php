@@ -725,7 +725,7 @@ final class PdoContent
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
                         $this->pool->debug($option['_count_sql']);
-                        $this->pool->error("SQL count 超时{$this->_CONF['time_limit']}s");
+                        $this->pool->error("SQL count 超时{$this->_CONF['time_limit']}s", $traceLevel + 1);
                     }
                     $count = $stmtC->fetch(PDO::FETCH_ASSOC);
                 }
@@ -751,7 +751,7 @@ final class PdoContent
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
                         $this->pool->debug($option['_count_sql']);
-                        $this->pool->error("SQL count 超时{$this->_CONF['time_limit']}s");
+                        $this->pool->error("SQL count 超时{$this->_CONF['time_limit']}s", $traceLevel + 1);
                     }
                 }
 
