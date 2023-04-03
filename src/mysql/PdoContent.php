@@ -7,6 +7,7 @@ use PDO;
 use esp\error\Error;
 use esp\dbs\Pool;
 use PDOException;
+use function esp\helper\_echo;
 
 final class PdoContent
 {
@@ -308,6 +309,7 @@ final class PdoContent
 
         if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN, $try)) {
             echo "MysqlPDO has gone away, try Now!\n";
+            echo "Pool CreateTime:{$this->pool->createTime}\n";
             goto tryExe;
         }
 
@@ -501,6 +503,7 @@ final class PdoContent
 
             if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
                 if (_CLI) {
+                    _echo("Pool CreateTime:{$this->pool->createTime}", 'red');
                     print_r($debugOption);
                     print_r([
                         'id' => $transID,
@@ -509,7 +512,7 @@ final class PdoContent
                         'after' => time() - $this->connect_time[$transID],
                     ]);
                 } else {
-                    ($debug and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
+                    ($debug) and $this->pool->debug($debugOption, $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;

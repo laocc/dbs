@@ -22,6 +22,7 @@ final class Pool
     public Mysql $_mysql;
     public Paging $paging;
     public Counter $counter;
+    public string $createTime;
 
     private Cache $_cache;
     private Redis $_redis;
@@ -32,6 +33,7 @@ final class Pool
 
     public function __construct(array $config, Controller $controller)
     {
+        $this->createTime = date('Y-m-d H:i:s') . (_CLI ? ' CLI' : ' CGI');
         $this->config = &$config;
         $this->controller = &$controller;
         if (isset($controller->_counter)) $this->counter = &$controller->_counter;
