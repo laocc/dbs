@@ -18,8 +18,8 @@ final class Mysql
 
     private array $config;
 
-    private bool $_cache = false;
-    private array $_cache_patch = [];
+    private int $_cache = 0;
+    private array $_patch_cache = [];
 
     private array $_MysqlPool = array();
 
@@ -159,23 +159,48 @@ final class Mysql
      * $this->delete(['artID'=>11]);              不删除，因为没指定
      *
      *
-     * @param void $run
+     * @param void $run false=不执行，force=强制读取mysql并保存cache，array批量删除
      * @return $this
      */
-    public function cache($run = true): Mysql
+    public function cache($run = null): Mysql
     {
         if ($run === false) {
-            $this->_cache = false;
-        } else {
-            $this->_cache = true;
-            $this->_cache_patch = [];
-            if (is_array($run)) {
-                if (isset($run[0])) {
-                    $this->_cache_patch = $run;
-                } else {
-                    $this->_cache_patch = [$run];
-                }
+            $this->_cache = 0;
+        } else if (is_array($run)) {
+            $this->_cache = 2;
+            if (isset($run[0])) {
+                $this->_patch_cache = $run;
+            } else {
+                $this->_patch_cache = [$run];
             }
+        } else if ($run === 'force') {
+            $this->_cache = 1;
+
+        } else {
+            $this->_cache = 2;
+        }
+        return $this;
+    }
+
+    /**
+     * 直接删除相关表的缓存，一般用于批量事务完成之后
+     *
+     * @param string $table
+     * @param array $where
+     * @return $this
+     */
+    private function delete_cache(string $table, array $where): Mysql
+    {
+        if ($this->_cache) {
+            $this->pool->debug([
+                'cache' => 1,
+                'sql' => 'update/delete' . " * from {$table} where ...",
+                'params' => json_encode($where, 320),
+                'patch' => json_encode($this->_patch_cache, 320),
+            ], $this->_traceLevel + 1);
+            $this->pool->cache()->table($table)->delete($where, ...$this->_patch_cache);
+            $this->_cache = 0;
+            $this->_patch_cache = [];
         }
         return $this;
     }
@@ -220,29 +245,6 @@ final class Mysql
         $ck = $this->checkRunData('insert', $val);
         if ($ck) return $ck;
         return $val;
-    }
-
-    /**
-     * 直接删除相关表的缓存，一般用于批量事务完成之后
-     *
-     * @param string $table
-     * @param array $where
-     * @return $this
-     */
-    private function delete_cache(string $table, array $where): Mysql
-    {
-        if ($this->_cache) {
-            $this->pool->debug([
-                'cache' => 1,
-                'sql' => 'update/delete' . " * from {$table} where ...",
-                'params' => json_encode($where, 320),
-                'patch' => json_encode($this->_cache_patch, 320),
-            ], $this->_traceLevel + 1);
-            $this->pool->cache()->table($table)->delete($where, ...$this->_cache_patch);
-            $this->_cache = false;
-            $this->_cache_patch = [];
-        }
-        return $this;
     }
 
     /**
@@ -367,7 +369,7 @@ final class Mysql
             $where = [$this->PRI() => intval($where)];
         }
 
-        if ($this->_cache) {
+        if ($this->_cache > 1) {
             $data = $this->pool->cache()->table($this->_table)->read($where);
             if (!empty($data)) {
 
@@ -384,7 +386,7 @@ final class Mysql
                 }
 
                 $this->clear_initial();
-                $this->_cache = false;
+                $this->_cache = 0;
                 return $data;
             }
             $this->selectKey = [];//调了缓存，就删除select项
@@ -421,13 +423,13 @@ final class Mysql
 
         $ck = $this->checkRunData('get', $data);
         if ($ck) {
-            $this->_cache = false;
+            $this->_cache = 0;
             return $ck;
         }
 
         $val = $data->row($this->columnKey, $_decode);
         if ($val === false or $val === null) {
-            $this->_cache = false;
+            $this->_cache = 0;
             return null;
         }
 
@@ -440,7 +442,7 @@ final class Mysql
             ], $this->_traceLevel + 1);
 
             $this->pool->cache()->table($table)->save($where, $val);
-            $this->_cache = false;
+            $this->_cache = 0;
         }
 
         return $val;
