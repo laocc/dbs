@@ -10,6 +10,7 @@ use esp\dbs\library\KeyValue;
  * Class Redis
  * @package db
  * http://doc.redisfans.com/
+ *  extends \Redis
  */
 final class Redis implements KeyValue
 {
@@ -123,10 +124,8 @@ final class Redis implements KeyValue
      */
     public function hash(string $tabName): RedisHash
     {
-        if (!isset($this->tmpHash[$tabName])) {
-            $this->tmpHash[$tabName] = new RedisHash($this->redis, $tabName);
-        }
-        return $this->tmpHash[$tabName];
+        if (isset($this->tmpHash[$tabName])) return $this->tmpHash[$tabName];
+        return $this->tmpHash[$tabName] = new RedisHash($this->redis, $tabName);
     }
 
     public function hGet(string $table, string $hashKey): ?string
@@ -167,10 +166,10 @@ final class Redis implements KeyValue
 
     /**
      * 保存
-     * @param $key
+     * @param string $key
      * @param $value
-     * @param int $ttl ：=null以config为准，=0不过期，>0指定时间
-     * @return bool
+     * @param int|null $ttl ：=null以config为准，=0不过期，>0指定时间
+     * @return bool|\Redis
      */
     public function set(string $key, $value, int $ttl = null)
     {
