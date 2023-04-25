@@ -56,7 +56,6 @@ use esp\helper\library\Paging;
  * Class ModelPdo
  * @package esp\core
  */
-
 abstract class DbModel extends Library
 {
     public string $_dbs_label_ = '这只是一个标识，仅用于在Library中识别这是引用自DbModel的类，并创建_pool对象';
@@ -79,7 +78,8 @@ abstract class DbModel extends Library
         if (isset($this->alias[$name])) $name = $this->alias[$name];
         $mysql = $this->Mysql();
         if (method_exists($mysql, $name) and is_callable([$mysql, $name])) {
-            return call_user_func_array([$mysql, $name], $arguments);
+            return $mysql->{$name}(...$arguments);
+//            return call_user_func_array([$mysql, $name], $arguments);
         }
 
         throw new Error("MYSQL::{$name}() methods not exists.");

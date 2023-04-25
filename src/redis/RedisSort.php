@@ -6,6 +6,14 @@ namespace esp\dbs\redis;
 
 class RedisSort
 {
+    private Redis $redis;
+    private string $table;
+
+    public function __construct(Redis $redis, string $table)
+    {
+        $this->redis = &$redis;
+        $this->table = $table;
+    }
 
     //========================================有序集合=====================================
 
@@ -27,7 +35,8 @@ class RedisSort
                 $nVal[] = $timeKey($k);
                 $nVal[] = ($v);
             }
-            return call_user_func_array([$this->redis, 'zAdd'], array_merge([$this->table], $nVal));
+            return $this->redis->zAdd(...array_merge([$this->table], $nVal));
+//            return call_user_func_array([$this->redis, 'zAdd'], array_merge([$this->table], $nVal));
         } else {
             return $this->redis->zAdd($this->table, $timeKey(), ($value));
         }
@@ -57,7 +66,8 @@ class RedisSort
             if ($order === 'asc') {//按位置删除
                 $this->redis->zRemRangeByRank($this->table, 0, $count);
             } else { //按值删除
-                call_user_func_array([$this->redis, 'zRem'], array_merge([$this->table], $val));
+                $this->redis->zRem(...array_merge([$this->table], $val));
+//                call_user_func_array([$this->redis, 'zRem'], array_merge([$this->table], $val));
             }
 
         }
@@ -93,7 +103,8 @@ class RedisSort
         }
         $value = $this->redis->sRandMember($this->table, $count);
         if (!!$kill) {
-            call_user_func_array([$this->redis, 'sRem'], array_merge([$this->table], $value));
+            $this->redis->sRem(...array_merge([$this->table], $value));
+//            call_user_func_array([$this->redis, 'sRem'], array_merge([$this->table], $value));
         }
         return $value;
     }

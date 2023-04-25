@@ -189,7 +189,7 @@ final class Mysql
      * @param array $where
      * @return $this
      */
-    private function delete_cache(string $table, array $where): Mysql
+    public function delete_cache(string $table, array $where): Mysql
     {
         if ($this->_cache) {
             $this->pool->debug([

@@ -7,8 +7,8 @@ use \Redis;
 
 class RedisList
 {
-    private $redis;
-    private $key;
+    private Redis $redis;
+    private string $key;
 
     /**
      * BLPOP                BLPOP 是列表的阻塞式(blocking)弹出原语。

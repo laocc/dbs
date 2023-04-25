@@ -494,7 +494,8 @@ final class Redis implements KeyValue
 
     public function __call($name, $arguments)
     {
-        return call_user_func_array([$this->redis, $name], $arguments);
+        return $this->redis->{$name}(...$arguments);
+//        return call_user_func_array([$this->redis, $name], $arguments);
 //        return $this->redis->{$name}(...$arguments);
     }
 
