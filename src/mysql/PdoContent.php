@@ -873,11 +873,12 @@ final class PdoContent
          */
         $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
+            $this->close();
             throw new Error("Trans Commit Error: 当前没有处于事务{$trans_id}中", 1);
         }
         $this->_trans_run[$trans_id] = false;
         $commit = $CONN->commit();
-
+        $this->close();
         !_CLI and $this->pool->debug([
             'transID' => $trans_id,
             'value' => $commit
@@ -900,6 +901,7 @@ final class PdoContent
          */
         $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
+            $this->close();
             return true;
         }
         $this->_trans_error = [
@@ -913,7 +915,9 @@ final class PdoContent
         ];
         !_CLI and $this->pool->debug($this->_trans_error);
 
-        return $CONN->rollBack();
+        $back = $CONN->rollBack();
+        $this->close();
+        return $back;
     }
 
     /**
