@@ -859,6 +859,8 @@ final class Mysql
      */
     public function order($key, string $sort = 'asc', bool $addProtect = null): Mysql
     {
+        if ($sort === '') return $this;
+
         if (is_array($key)) {
             foreach ($key as $ks) {
                 if (!isset($ks[1])) $ks[1] = 'asc';
