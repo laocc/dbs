@@ -2,7 +2,7 @@
   "name": "laocc/dbs",
   "description": "mysql@PDO,redis,mongodb",
   "require": {
-    "php": ">7.4.0",
+    "php": ">7.4",
     "laocc/helper": ">1.0",
     "ext-redis": "*",
     "ext-json": "*"
