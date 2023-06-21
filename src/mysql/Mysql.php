@@ -410,6 +410,16 @@ final class Mysql
                 if ($this->_decode) $data = $this->decode_data($data, $this->_decode);
                 $this->clear_initial();
                 $this->_cache = 0;
+                if ($_select) {
+                    $_select = implode(',', array_column($_select, 0));
+                    if (strpos($_select, '.') === false) {
+                        $_select = explode(',', str_replace(',,', ',', $_select));
+                        foreach ($data as $k => $vm) {
+                            if (!in_array($k, $_select)) unset($data[$k]);
+                        }
+                    }
+                }
+
                 return $data;
             }
             $this->selectKey = [];//调了缓存，就删除select项
@@ -467,10 +477,13 @@ final class Mysql
             $this->_cache = 0;
         }
         if ($_decode) $val = $this->decode_data($val, $_decode);
-
         if ($_select) {
-            foreach ($val as $k => $v) {
-                if (!in_array($k, $_select)) unset($val[$k]);
+            $_select = implode(',', array_column($_select, 0));
+            if (strpos($_select, '.') === false) {
+                $_select = explode(',', str_replace(',,', ',', $_select));
+                foreach ($data as $k => $vm) {
+                    if (!in_array($k, $_select)) unset($data[$k]);
+                }
             }
         }
 
