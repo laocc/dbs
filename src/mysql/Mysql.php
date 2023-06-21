@@ -6,6 +6,7 @@ namespace esp\dbs\mysql;
 use esp\error\Error;
 use esp\dbs\Pool;
 use esp\helper\library\Paging;
+use function esp\helper\numbers;
 
 
 /**
@@ -353,6 +354,27 @@ final class Mysql
         return $this->MysqlObj(0, 1)->query($sql);
     }
 
+    private function decode_data($data, $decode)
+    {
+        if (isset($decode['array'])) $decode['json'] = $decode['array'];
+        if (isset($decode['json'])) {
+            foreach ($decode['json'] as $k) {
+                if (is_int($data[$k[1]])) {
+                    $data[$k[0]] = numbers($data[$k[1]]);
+                } else {
+                    $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
+                }
+            }
+        }
+        if (isset($decode['time'])) {
+            foreach ($decode['time'] as $k) {
+                $tm = ($data[$k[1]] ?? 0);
+                if ($tm) $data[$k[0]] = date('Y-m-d H:i:s', $tm);
+            }
+        }
+        return $data;
+    }
+
     /**
      * 选择一条记录
      * @param $where
@@ -384,7 +406,7 @@ final class Mysql
                     $sql = "HitCache({$this->_table}) " . json_encode($where, 320);
                     $this->pool->counter->recodeMysql('select', $sql, $this->_traceLevel + 1);
                 }
-
+                if ($this->_decode) $data = $this->decode_data($data, $this->_decode);
                 $this->clear_initial();
                 $this->_cache = 0;
                 return $data;
@@ -419,7 +441,7 @@ final class Mysql
             $obj->order($orderBy, $sort);
         }
         $data = $obj->get(0, $this->_traceLevel + 1);
-        $_decode = $this->_decode;
+        $_decode = $this->_cache ? [] : $this->_decode;//必须在checkRunData之前缓存
 
         $ck = $this->checkRunData('get', $data);
         if ($ck) {
@@ -434,7 +456,6 @@ final class Mysql
         }
 
         if ($this->_cache) {
-
             $this->pool->debug([
                 'cache' => 1,
                 'sql' => "save cache from {$table} where ...",
