@@ -391,6 +391,7 @@ final class Mysql
             $where = [$this->PRI() => intval($where)];
         }
 
+        $_select = $this->selectKey;
         if ($this->_cache > 1) {
             $data = $this->pool->cache()->table($this->_table)->read($where);
             if (!empty($data)) {
@@ -441,7 +442,7 @@ final class Mysql
             $obj->order($orderBy, $sort);
         }
         $data = $obj->get(0, $this->_traceLevel + 1);
-        $_decode = $this->_cache ? [] : $this->_decode;//必须在checkRunData之前缓存
+        $_decode = $this->_decode;//必须在checkRunData之前缓存
 
         $ck = $this->checkRunData('get', $data);
         if ($ck) {
@@ -449,7 +450,7 @@ final class Mysql
             return $ck;
         }
 
-        $val = $data->row($this->columnKey, $_decode);
+        $val = $data->row($this->columnKey);
         if ($val === false or $val === null) {
             $this->_cache = 0;
             return null;
@@ -464,6 +465,13 @@ final class Mysql
 
             $this->pool->cache()->table($table)->save($where, $val);
             $this->_cache = 0;
+        }
+        if ($_decode) $val = $this->decode_data($val, $_decode);
+
+        if ($_select) {
+            foreach ($val as $k => $v) {
+                if (!in_array($k, $_select)) unset($val[$k]);
+            }
         }
 
         return $val;
