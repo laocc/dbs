@@ -402,6 +402,18 @@ final class Builder
         }
     }
 
+    /**
+     * where的同时记录也要删除缓存，主要用于在事务中
+     * 如果还带其他条件，就分别用>where()->cache()
+     * @param array $where
+     * @return Builder|string
+     * @throws Error
+     */
+    public function cache_where(array $where)
+    {
+        return $this->cache($where)->where($where);
+    }
+
 
     /**
      * 执行一个Where子句
