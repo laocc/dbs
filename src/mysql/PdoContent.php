@@ -881,9 +881,9 @@ final class PdoContent
         $this->close();
         !_CLI and $this->pool->debug([
             'transID' => $trans_id,
-            'value' => $commit
+            'timestamp' => microtime(true),
+            'value' => var_export($commit, true)
         ]);
-
         return $commit;
     }
 
