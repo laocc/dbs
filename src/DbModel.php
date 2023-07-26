@@ -13,6 +13,7 @@ use esp\dbs\redis\RedisHash;
 use esp\dbs\sqlite\Sqlite;
 use esp\dbs\yac\Yac;
 use esp\helper\library\Paging;
+use function esp\core\esp_error;
 
 /**
  * 非esp框架，可以自行实现此类，不需要扩展自esp\core\Library
@@ -202,5 +203,64 @@ abstract class DbModel extends Library
     {
         return $this->_controller->_pool->yac($table);
     }
+
+    /**
+     * 数据迭代
+     *
+     * @param callable $fun
+     * @param array $option
+     * @return int
+     */
+    public function iterator(callable $fun, array $option = []): int
+    {
+        if (!isset($this->_table)) esp_error('当前类未定义_table');
+        if (!isset($this->_id)) esp_error('当前类未定义_id');
+
+        $minID = intval($option['min'] ?? 0);
+        $maxID = intval($option['max'] ?? PHP_INT_MAX);
+        $limit = intval($option['size'] ?? 100);
+        $sleep = intval($option['sleep'] ?? 0);//微秒，不得超过100万，小于10时以秒计算
+        if ($sleep > 1000000) $sleep = intval($sleep / 1000000);
+
+        $rin = true;
+        $index = 0;
+        $count = 0;
+
+        while ($rin) {
+            $where = [];
+            $where["{$this->_id}>"] = $minID;
+            if (isset($option['where'])) $where = $where + $option['where'];
+
+            $data = $this->table($this->_table)->all($where, $this->_id, 'asc', $limit);
+            if (empty($data)) break;
+            $index++;
+
+            foreach ($data as $rs) {
+                $minID = $rs[$this->_id];
+                if ($minID >= $maxID) {
+                    $rin = false;
+                    break;
+                }
+
+                $run = $fun($this, $rs, $minID, $index);
+                $count++;
+
+                if ($run === true) break;//结束当前批次
+
+                else if ($run === false) {//跳出全部循环
+                    $rin = false;
+                    break;
+                }
+            }
+
+
+            if ($sleep > 10) usleep($sleep);
+            elseif ($sleep > 0) sleep($sleep);
+
+        }
+
+        return $count;
+    }
+
 
 }
