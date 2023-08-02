@@ -361,6 +361,8 @@ final class Mysql
             foreach ($decode['json'] as $k) {
                 if (is_int($data[$k[1]])) {
                     $data[$k[0]] = numbers($data[$k[1]]);
+                } else if (is_array($data[$k[1]])) {
+                    $data[$k[0]] = $data[$k[1]];
                 } else {
                     $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
                 }
