@@ -655,7 +655,7 @@ final class Mysql
     {
         try {
             return gzcompress($string, 5);
-        } catch (Error $e) {
+        } catch (\Error|\Exception $e) {
             return $e->getMessage();
         }
     }
@@ -669,7 +669,7 @@ final class Mysql
     {
         try {
             return gzuncompress($string);
-        } catch (Error $e) {
+        } catch (\Error|\Exception $e) {
             return $e->getMessage();
         }
     }

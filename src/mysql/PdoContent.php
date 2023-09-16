@@ -214,7 +214,7 @@ final class PdoContent
 
             $info = $CONN->getAttribute(PDO::ATTR_SERVER_INFO);
 
-        } catch (Error $error) {
+        } catch (\Error|\Exception $error) {
             ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
             print_r([
                 'id' => $transID,

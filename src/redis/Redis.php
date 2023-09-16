@@ -63,7 +63,7 @@ final class Redis implements KeyValue
                     throw new Error("Redis服务器【{$conf['host']}:{$conf['port']}】无法连接。", 1, 1);
                 }
             }
-        } catch (Error $e) {
+        } catch (\Error|\Exception $e) {
             if ($tryCont++ > 2) {
                 $err = base64_encode(print_r($conf, true));
                 throw new Error($e->getMessage() . '/' . $err, $e->getCode(), 1, 1);
