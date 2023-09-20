@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace esp\dbs\mysql;
 
 use esp\error\Error;
-use models\AdminModel;
-use function esp\core\esp_error;
 use function esp\helper\root;
 
 /**

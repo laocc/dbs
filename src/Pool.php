@@ -12,8 +12,8 @@ use esp\dbs\mysql\Mysql;
 use esp\dbs\redis\Redis;
 use esp\dbs\sqlite\Sqlite;
 use esp\dbs\yac\Yac;
+use esp\dbs\library\Paging;
 use esp\debug\Counter;
-use esp\helper\library\Paging;
 
 final class Pool
 {

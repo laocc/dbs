@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace esp\dbs;
 
-use esp\error\Error;
 use esp\core\Library;
 use esp\dbs\mongodb\Mongodb;
 use esp\dbs\mysql\Builder;
@@ -12,7 +11,7 @@ use esp\dbs\redis\Redis;
 use esp\dbs\redis\RedisHash;
 use esp\dbs\sqlite\Sqlite;
 use esp\dbs\yac\Yac;
-use esp\helper\library\Paging;
+use esp\dbs\library\Paging;
 use function esp\core\esp_error;
 
 /**
@@ -82,8 +81,8 @@ abstract class DbModel extends Library
             return $mysql->{$name}(...$arguments);
 //            return call_user_func_array([$mysql, $name], $arguments);
         }
-
-        throw new Error("MYSQL::{$name}() methods not exists.");
+        esp_error("MYSQL::{$name}() methods not exists.");
+        return null;
     }
 
     final public function __get($name)
@@ -138,7 +137,7 @@ abstract class DbModel extends Library
             if (isset($this->_table)) $table = $this->_table;
             if (!$table) {
                 preg_match('/(.+\\\)?(\w+)Model$/i', get_class($this), $mac);
-                if (!$mac) throw new Error('未指定表名');
+                if (!$mac) esp_error('未指定表名');
                 $table = $mac[2];
             }
         }

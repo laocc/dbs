@@ -5,7 +5,7 @@ namespace esp\dbs\mysql;
 
 use esp\error\Error;
 use esp\dbs\Pool;
-use esp\helper\library\Paging;
+use esp\dbs\library\Paging;
 use function esp\helper\numbers;
 
 
@@ -613,30 +613,18 @@ final class Mysql
         if (isset($this->sumKey)) $obj->sum($this->sumKey);
 
         if (!isset($this->pool->paging)) {
-            $this->pool->paging = new Paging();
+            $this->pool->paging = new Paging(0, 0, $this->_count);
         }
 
         $skip = ($this->pool->paging->index - 1) * $this->pool->paging->size;
         $data = $obj->limit($this->pool->paging->size, $skip)->get(0, $this->_traceLevel + 1);
-        $_decode = $this->_decode;
-        if ($v = $this->checkRunData('list', $data)) return $v;
+        $_decode = $this->_decode;//中转一下，下面checkRunData里会清空此值
 
+        if ($this->_count === 0) $this->pool->paging->recode($data->count());
         if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
+        $this->pool->paging->calculate(0);
 
-        if ($this->_count === 0) {//执行统计
-            $this->pool->paging->calculate($data->count());
-
-        } else if ($this->_count === PHP_INT_MIN) {
-            $this->pool->paging->calculate(0);
-
-        } else if ($this->_count > 0) {//指定了总数
-            $this->pool->paging->calculate($this->_count);
-
-        } else {//按此页数计算
-            $this->pool->paging->calculate((abs($this->_count) + ($this->pool->paging->index - 1)) * $this->pool->paging->size, true);
-
-        }
-
+        if ($v = $this->checkRunData('list', $data)) return $v;
         return $data->rows(0, null, $_decode);
     }
 
