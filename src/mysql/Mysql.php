@@ -368,12 +368,23 @@ final class Mysql
                 }
             }
         }
+
         if (isset($decode['time'])) {
             foreach ($decode['time'] as $k) {
-                $tm = ($data[$k[1]] ?? 0);
-                if ($tm) $data[$k[0]] = date('Y-m-d H:i:s', $tm);
+                $data[$k[0]] = date('Y-m-d H:i:s', ($data[$k[1]] ?? 0));
             }
         }
+
+        if (isset($decode['point'])) {
+            foreach ($decode['point'] as $k) {
+                preg_match('/POINT\((-?[\d\.]+)\s(-?[\d\.]+)\)/i', $data[$k[1]], $locMch);
+                $data[$k[0]] = [
+                    'longitude' => floatval($locMch[1] ?? 0),
+                    'latitude' => floatval($locMch[2] ?? 0)
+                ];
+            }
+        }
+
         return $data;
     }
 
@@ -681,8 +692,8 @@ final class Mysql
     public function point($lng, $lat = null): string
     {
         if (is_null($lat) and is_array($lng)) {
-            $lat = $lng['lat'] ?? ($lng[1] ?? 0);
-            $lng = $lng['lng'] ?? ($lng[0] ?? 0);
+            $lng = $lng['longitude'] ?? ($lng['lng'] ?? ($lng[0] ?? 0));
+            $lat = $lng['latitude'] ?? ($lng['lat'] ?? ($lng[1] ?? 0));
         }
         return "point({$lng} {$lat})";
     }
@@ -708,6 +719,21 @@ final class Mysql
         return "polygon(" . implode(',', $val) . ")";
     }
 
+
+    /**
+     * 地址类型转换可识别类型
+     * 其他字段要另外 ->select('*') 且必须先select(*)
+     * 如果不是*而是指定字段就无所谓先后了
+     *
+     * @param string $field
+     * @param string $type point,polygon
+     * @return $this
+     */
+    public function location(string $field, string $type = 'point'): Mysql
+    {
+        $this->selectKey[] = ["ST_AsText({$field}) as {$field}", false];
+        return $this->decode($field, $type);
+    }
 
     /**
      * 统计某几个字段的和值

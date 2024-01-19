@@ -59,12 +59,34 @@ final class Result
                 }
             }
         }
+
         if (isset($decode['time'])) {
             foreach ($decode['time'] as $k) {
                 $tm = ($data[$k[1]] ?? 0);
                 if ($tm) $data[$k[0]] = date('Y-m-d H:i:s', $tm);
             }
         }
+
+        if (isset($decode['point'])) {
+            foreach ($decode['point'] as $k) {
+                preg_match('/POINT\((-?[\d\.]+)\s(-?[\d\.]+)\)/i', $data[$k[1]], $locMch);
+                $data[$k[0]] = [
+                    'longitude' => floatval($locMch[1] ?? 0),
+                    'latitude' => floatval($locMch[2] ?? 0)
+                ];
+            }
+        }
+
+        if (isset($decode['polygon'])) {
+            foreach ($decode['point'] as $k) {
+                preg_match('/polygon\((-?[\d\.]+)\s(-?[\d\.]+)\)/i', $data[$k[1]], $locMch);
+                $data[$k[0]] = [
+                    'longitude' => floatval($locMch[1] ?? 0),
+                    'latitude' => floatval($locMch[2] ?? 0)
+                ];
+            }
+        }
+
         return $data;
     }
 
