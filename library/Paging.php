@@ -96,7 +96,7 @@ final class Paging
     public function value(): array
     {
         return [
-            'recode' => $this->recode . ($this->isTake ? '+' : ''),//记录数
+            'recode' =>  ($this->isTake ? ($this->recode . '+') : $this->recode ),//记录数
             'size' => $this->size,//每页数量
             'index' => $this->index,//当前页码
             'total' => $this->total,

@@ -1399,8 +1399,6 @@ final class Builder
         $sql = array();
         $sql[] = "DELETE";
         $sql[] = "FROM {$this->_table} WHERE {$where}";
-        if (!empty($this->_order_by)) $sql[] = "ORDER BY {$this->_order_by}";
-        if (!empty($this->_limit)) $sql[] = "LIMIT {$this->_limit}";
         $sql = implode(' ', $sql);
         return $this->_PDO->query($sql, $this->option('delete'), null, $tractLevel + 1);
     }
