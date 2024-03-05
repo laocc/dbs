@@ -509,10 +509,11 @@ final class Mysql
      * @param string|null $orderBy
      * @param string $sort
      * @param int $limit
+     * @param int $skip
      * @return array
      * @throws Error
      */
-    public function all(array $where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0)
+    public function all(array $where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, int $skip = 0)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect)->prepare();
@@ -546,7 +547,7 @@ final class Mysql
             $obj->order($orderBy, $sort);
         }
 
-        $data = $obj->get($limit, $this->_traceLevel + 1);
+        $data = $obj->skip($skip)->get($limit, $this->_traceLevel + 1);
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('all', $data)) return $v;
 

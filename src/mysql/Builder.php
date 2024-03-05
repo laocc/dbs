@@ -1285,7 +1285,7 @@ final class Builder
      * @param string $proName
      * @param array $params
      * @param int $tractLevel
-     * @return bool|Result|int|string|null
+     * @return bool|int|Result|null
      */
     public function procedure(string $proName, array $params, int $tractLevel)
     {
@@ -1323,7 +1323,7 @@ final class Builder
      * 获取查询结果
      * @param int $row
      * @param int $tractLevel
-     * @return bool|int|string|null|Result
+     * @return bool|int|Result|null
      */
     public function get(int $row = 0, int $tractLevel = 1)
     {
