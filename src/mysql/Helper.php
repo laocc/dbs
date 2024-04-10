@@ -115,17 +115,18 @@ trait Helper
     public function tables(bool $html = false)
     {
         $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.TABLES')
-            ->select("TABLE_NAME as name,DATA_LENGTH as data,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
+            ->select("TABLE_NAME as name,DATA_LENGTH as data,INDEX_LENGTH as index,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
             ->where(['TABLE_SCHEMA' => $this->dbName])->get(0, 3)->rows();
 
         if (empty($val)) return [];
         if ($html) {
             $table = [];
             $table[] = '<table class="layui-table">';
-            $table[] = "<thead><tr><td>表名</td><td>行数</td><td>数据</td><td>自增ID</td><td>摘要</td><td>更新时间</td></tr></thead>";
+            $table[] = "<thead><tr><td>表名</td><td>行数</td><td>数据</td><td>索引</td><td>自增ID</td><td>摘要</td><td>更新时间</td></tr></thead>";
             foreach ($val as $rs) {
                 $rs['data'] = intval($rs['data'] / 1024 / 1024);
-                $table[] = "<tr><td>{$rs['name']}</td><td>{$rs['rows']}</td><td>{$rs['data']}MB</td><td>{$rs['increment']}</td><td>{$rs['comment']}</td><td>{$rs['time']}</td></tr>";
+                $rs['index'] = intval($rs['index'] / 1024 / 1024);
+                $table[] = "<tr><td>{$rs['name']}</td><td>{$rs['rows']}</td><td>{$rs['data']}MB</td><td>{$rs['index']}MB</td><td>{$rs['increment']}</td><td>{$rs['comment']}</td><td>{$rs['time']}</td></tr>";
             }
             $table[] = '<table>';
             return implode("\n", $table);
