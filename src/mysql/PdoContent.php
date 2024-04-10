@@ -730,7 +730,18 @@ final class PdoContent
                         $this->pool->debug($option['_count_sql']);
                         $this->pool->error("SQL count 超时{$this->_CONF['time_limit']}s", $traceLevel + 1);
                     }
-                    $count = $stmtC->fetch(PDO::FETCH_ASSOC);
+                    /**
+                     * 这块可能有问题
+                     * 在有GROUP时，执行count(1) *** group by时返回的为多条group数据
+                     * 还需要考虑HAVING
+                     */
+                    if (strpos($option['_count_sql'], 'GROUP')) {
+                        $fetchAll = $stmtC->fetchAll(PDO::FETCH_ASSOC);
+                        $count = ['count' => count($fetchAll)];
+                    } else {
+                        $count = $stmtC->fetch(PDO::FETCH_ASSOC);
+                    }
+
                 }
 
 
@@ -750,7 +761,13 @@ final class PdoContent
 
                 if ($option['count']) {
                     $a = microtime(true);
-                    $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
+                    if (strpos($option['_count_sql'], 'GROUP')) {
+                        $fetchAll = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetchAll();
+                        $count = ['count' => count($fetchAll)];
+                    } else {
+                        $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
+                    }
+//                    $count = $CONN->query($option['_count_sql'], PDO::FETCH_ASSOC)->fetch();
                     $this->counter('select', $sql, -1);
                     if (!_CLI && (microtime(true) - $a) > $this->_CONF['time_limit']) {
                         $this->pool->debug($option['_count_sql']);
