@@ -106,7 +106,7 @@ final class Redis implements KeyValue
 
     /**
      * 创建一个LIST集合
-     * @param string|null $tabName
+     * @param string $tabName
      * @return RedisList
      */
     public function list(string $tabName)
@@ -128,7 +128,7 @@ final class Redis implements KeyValue
         return $this->tmpHash[$tabName] = new RedisHash($this->redis, $tabName);
     }
 
-    public function hGet(string $table, string $hashKey): ?string
+    public function hGet(string $table, string $hashKey)
     {
         $val = $this->redis->hGet($table, $hashKey);
         if (empty($val)) return null;
@@ -269,7 +269,7 @@ final class Redis implements KeyValue
     /**
      * 最近一次持久化保存的时间
      * @param bool $date
-     * @return false|int|string
+     * @return int|string
      */
     public function lastSave(bool $date = true)
     {
@@ -362,7 +362,7 @@ final class Redis implements KeyValue
         }
         if ($filter) {
             $value = array_filter($value, function ($v) use ($filter) {
-                return (strpos($v, $filter) === 0);
+                return (str_starts_with($v, $filter));
             });
         }
         return $value;
@@ -380,7 +380,7 @@ final class Redis implements KeyValue
 
     /**
      * @param string ...$keys
-     * @return bool|int
+     * @return bool
      */
     public function del(string ...$keys): bool
     {
@@ -410,19 +410,19 @@ final class Redis implements KeyValue
      * 计数器
      * 如果值包含错误的类型，或字符串类型的值不能表示为数字，那么返回一个错误。
      * @param string $key
-     * @param int $inc
+     * @param int $incurably
      * @return bool|int
      */
-    public function counter(string $key = 'count', int $inc = 1)
+    public function counter(string $key = 'count', int $incurably = 1)
     {
-        if ($inc === 1) {
+        if ($incurably === 1) {
             return $this->redis->incr($key);
-        } elseif ($inc === -1) {
+        } elseif ($incurably === -1) {
             return $this->redis->decr($key);
-        } elseif ($inc > 0) {
-            return $this->redis->incrBy($key, $inc);
-        } elseif ($inc < 0) {
-            return $this->redis->decrBy($key, abs($inc));
+        } elseif ($incurably > 0) {
+            return $this->redis->incrBy($key, $incurably);
+        } elseif ($incurably < 0) {
+            return $this->redis->decrBy($key, abs($incurably));
         } else {
             return false;
         }
