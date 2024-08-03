@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace esp\dbs\mysql;
 
 use esp\error\Error;
+use function esp\helper\data_size;
 use function esp\helper\root;
 
 /**
@@ -112,13 +113,14 @@ trait Helper
      * @return array|mixed|string
      * @throws Error
      */
-    public function tables(bool $html = false)
+    public function tables(bool $html = false, bool $human = false)
     {
         $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.TABLES')
             ->select("TABLE_NAME as name,DATA_LENGTH as data,INDEX_LENGTH as index,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
             ->where(['TABLE_SCHEMA' => $this->dbName])->get(0, 3)->rows();
 
         if (empty($val)) return [];
+
         if ($html) {
             $table = [];
             $table[] = '<table class="layui-table">';
@@ -131,6 +133,34 @@ trait Helper
             $table[] = '<table>';
             return implode("\n", $table);
         }
+        if (!$human) return $val;
+
+        $gb = 1024 * 1024 * 1024;
+        $total = 0;
+        $index = 0;
+        $rows = 0;
+
+        foreach ($val as &$rs) {
+            $rs['total'] = ($rs['data'] > $gb or $rs['index'] > $gb) ? ($rs['data'] + $rs['index']) : 0;
+            $total += $rs['data'];
+            $index += $rs['index'];
+            $rows += $rs['rows'];
+
+            $rs['data'] = data_size($rs['data']);
+            $rs['index'] = data_size($rs['index']);
+            $rs['total'] = data_size($rs['total']);
+        }
+        $val[] = [
+            'name' => 'TOTAL',
+            'data' => data_size($total),
+            'index' => data_size($index),
+            'rows' => $rows,
+            'increment' => '',
+            'comment' => '',
+            'time' => '',
+            'total' => '',
+        ];
+
         return $val;
     }
 
