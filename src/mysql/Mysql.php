@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace esp\dbs\mysql;
 
-use esp\error\Error;
 use esp\dbs\Pool;
+use esp\error\Error;
 use esp\dbs\library\Paging;
 use function esp\helper\numbers;
 
@@ -425,7 +425,7 @@ final class Mysql
                 $this->_cache = 0;
                 if ($_select) {
                     $_select = implode(',', array_column($_select, 0));
-                    if (strpos($_select, '.') === false) {
+                    if (!str_contains($_select, '.')) {
                         $_select = explode(',', str_replace(',,', ',', $_select));
                         foreach ($data as $k => $vm) {
                             if (!in_array($k, $_select)) unset($data[$k]);
@@ -464,7 +464,7 @@ final class Mysql
             if (!in_array(strtolower($sort), ['asc', 'desc', 'rand'])) $sort = 'ASC';
             $obj->order($orderBy, $sort);
         }
-        $data = $obj->get(0, $this->_traceLevel + 1);
+        $data = $obj->get(1, $this->_traceLevel + 1);
         $_decode = $this->_decode;//必须在checkRunData之前缓存
 
         $ck = $this->checkRunData('get', $data);
@@ -492,7 +492,7 @@ final class Mysql
         if ($_decode) $val = $this->decode_data($val, $_decode);
         if ($_select) {
             $_select = implode(',', array_column($_select, 0));
-            if (strpos($_select, '.') === false) {
+            if (!str_contains($_select, '.')) {
                 $_select = explode(',', str_replace(',,', ',', $_select));
                 foreach ($data as $k => $vm) {
                     if (!in_array($k, $_select)) unset($data[$k]);
