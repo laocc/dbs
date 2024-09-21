@@ -75,6 +75,14 @@ abstract class DbModel extends Library
      */
     final public function __call($name, $arguments)
     {
+        if (isset($this->_Disable__Call) and $this->_Disable__Call) {
+            $tract = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            $file = "调用位置：{$tract['file']}({$tract['line']})";
+            $this->_controller->error('禁止使用重载__call魔术方法', 2);
+            esp_error('禁止使用重载__call魔术方法', $file);
+            return null;
+        }
+
         if (isset($this->alias[$name])) $name = $this->alias[$name];
         $mysql = $this->Mysql();
         if (method_exists($mysql, $name) and is_callable([$mysql, $name])) {
