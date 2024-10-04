@@ -632,6 +632,9 @@ final class Builder
                     if ($field[-1] === '!') {
                         $in = '=0';
                         $field = substr($field, 0, -1);
+                    } else if ($field[-1] === '?') {
+                        $in = '?0';
+                        $field = substr($field, 0, -1);
                     }
 
                     if (is_array($value)) $value = array_sum($value);
@@ -646,6 +649,10 @@ final class Builder
                             $key = $this->paramKey($field);
                             $this->_param_data[$key] = $value;
                             $_where = "({$fieldPro} =0 or ({$fieldPro} & {$key})=0)";
+                        } else if ($in === '?0') {
+                            $key = $this->paramKey($field);
+                            $this->_param_data[$key] = $value;
+                            $_where = "({$fieldPro} =0 or ({$fieldPro} & {$key})>0)";
                         } else {
                             $key = $this->paramKey($field);
                             $this->_param_data[$key] = $value;
@@ -656,6 +663,8 @@ final class Builder
                             $_where = "({$fieldPro} = 0 )";
                         } else if ($in === '=0') {
                             $_where = "({$fieldPro} =0 or ({$fieldPro} & " . $this->quote($value) . ")=0)";
+                        } else if ($in === '?0') {
+                            $_where = "({$fieldPro} =0 or ({$fieldPro} & " . $this->quote($value) . ")>0)";
                         } else {
                             $_where = "({$fieldPro} >0 and ({$fieldPro} & " . $this->quote($value) . "){$in})";
                         }
