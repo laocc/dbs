@@ -48,7 +48,6 @@ trait Helper
      * @param string $table
      * @param int $id
      * @return bool|int|string|null
-     * @throws Error
      */
     public function increment(string $table, int $id = 1)
     {
