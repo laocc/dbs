@@ -88,15 +88,16 @@ final class Paging
     {
         if ($this->size === 0) return;
         if ($count > 0) $this->recode = $count;
-        $this->last = intval($this->recode % $this->size);//最后一页数
-        $this->total = intval(ceil($this->recode / $this->size));
         $this->isTake = $isTake;
+        $this->last = ($this->recode % $this->size);//最后一页数
+        $this->total = intval(ceil($this->recode / $this->size));
+        if ($this->total < 2) $this->index = 1;//总页数小于1时页码只能1
     }
 
     public function value(): array
     {
         return [
-            'recode' =>  ($this->isTake ? ($this->recode . '+') : $this->recode ),//记录数
+            'recode' => ($this->isTake ? ($this->recode . '+') : $this->recode),//记录数
             'size' => $this->size,//每页数量
             'index' => $this->index,//当前页码
             'total' => $this->total,
