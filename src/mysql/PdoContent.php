@@ -16,7 +16,7 @@ final class PdoContent
 
     private array $_CONF;//配置定义
     private array $_trans_run = array();//事务状态
-    private array $_trans_error = array();//事务出错状态
+    private string $_trans_error = '';//事务出错状态
     private array $connect_time = array();//连接时间
     private bool $_checkGoneAway = false;
     private bool $_cli_print_sql = false;
@@ -894,7 +894,7 @@ final class PdoContent
         if (!$CONN->beginTransaction()) {
             throw new Error("PDO_Error :  启动事务失败。", 1);
         }
-        $this->_trans_error = [];
+        $this->_trans_error = '';
 
         $this->_trans_run[$transID] = true;
         return $this;
@@ -905,10 +905,10 @@ final class PdoContent
      * 提交事务
      * @param int $trans_id
      * @param bool $rest
-     * @return array|bool
+     * @return bool|string
      * @throws Error
      */
-    public function trans_commit(int $trans_id, bool $rest)
+    public function trans_commit(int $trans_id, bool $rest): bool|string
     {
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
             if (!empty($this->_trans_error)) return $this->_trans_error;
@@ -946,7 +946,7 @@ final class PdoContent
      * @param null $error
      * @return bool
      */
-    public function trans_back(int $trans_id = 0, $error = null): bool
+    public function trans_back(int $trans_id, $error): bool
     {
         $this->_trans_run[$trans_id] = false;
         /**
@@ -957,15 +957,9 @@ final class PdoContent
             $this->close();
             return true;
         }
-        $this->_trans_error = [
-            'wait' => 0,
-            'trans' => $trans_id,
-            'sql' => 'rollBack',
-            'prepare' => null,
-            'param' => null,
-            'result' => true,
-            'error' => $error[2] ?? json_encode($error, 256 | 64),
-        ];
+        if (is_array($error)) $error = json_encode($error, 320);
+        else if (!is_string($error)) $error = strval($error);
+        $this->_trans_error = $error;
         !_CLI and $this->pool->debug($this->_trans_error);
 
         $back = $CONN->rollBack();

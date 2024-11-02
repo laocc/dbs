@@ -5,13 +5,14 @@ namespace esp\dbs;
 
 use esp\core\Library;
 use esp\dbs\mongodb\Mongodb;
-use esp\dbs\mysql\Builder;
 use esp\dbs\mysql\Mysql;
+use esp\dbs\mysql\Builder;
 use esp\dbs\redis\Redis;
 use esp\dbs\redis\RedisHash;
 use esp\dbs\sqlite\Sqlite;
 use esp\dbs\yac\Yac;
 use esp\dbs\library\Paging;
+use esp\error\Error;
 use function esp\core\esp_error;
 
 /**
@@ -37,8 +38,6 @@ use function esp\core\esp_error;
  * @method Array list(...$params) 读取多条记录，分页
  * @method Array count(...$params) 统计总数
  * @method Array rand(...$params) 随机取x条
- *
- * @method bool|Builder trans(...$params) 启动一个事务
  *
  * @method Mysql query(...$params) 直接执行SQL
  * @method Mysql cache(...$params) 启用缓存
@@ -134,6 +133,27 @@ abstract class DbModel extends Library
         }
     }
 
+    /**
+     * @param int $transID
+     * @return Builder
+     * @throws Error
+     */
+    public function trans(int $transID = 1): Builder
+    {
+        $mysql = $this->Mysql('');
+        return $mysql->trans($transID);
+    }
+
+    /**
+     * @param int $transID
+     * @return Builder
+     * @throws Error
+     */
+    public function builder(int $transID = 1): Builder
+    {
+        $mysql = $this->Mysql('');
+        return $mysql->builder($transID);
+    }
 
     /**
      * @param string|null $table

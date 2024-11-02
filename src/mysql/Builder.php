@@ -135,12 +135,12 @@ final class Builder
     /**
      * 事务结束，提交。
      * @param bool $rest
-     * @return array|bool
+     * @return string|bool
      */
-    public function commit(bool $rest = true)
+    public function commit(bool $rest = false): bool|string
     {
         $val = $this->_PDO->trans_commit($this->_Trans_ID, $rest);
-        if (is_array($val)) return $val;
+        if (is_string($val)) return $val;
 
         if (!empty($this->_cache)) {
             $hash = $this->_PDO->pool->cache();

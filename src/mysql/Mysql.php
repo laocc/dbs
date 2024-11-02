@@ -97,11 +97,10 @@ final class Mysql
 
     /**
      * @param int $trans_id
-     * @param array $batch_SQLs
      * @return Builder
      * @throws Error
      */
-    public function trans(int $trans_id = 1, array $batch_SQLs = []): Builder
+    public function trans(int $trans_id = 1): Builder
     {
         return $this->MysqlObj($trans_id)->trans($trans_id);
     }
