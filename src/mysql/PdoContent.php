@@ -28,7 +28,7 @@ final class PdoContent
     /**
      * PdoContent constructor.
      * @param int $tranID
-     * @param array|null $conf
+     * @param array $conf
      * @param Pool $pool
      */
     public function __construct(int $tranID, array $conf, Pool $pool)
@@ -203,9 +203,15 @@ final class PdoContent
         return $CONN->quote($string);
     }
 
-    private function connHasGoneAway(int $transID, string $real, PDO $CONN, int $try): bool
+    /**
+     * @param int $transID
+     * @param string $real
+     * @param PDO $CONN
+     * @return bool true=已离线，false在线
+     * @throws Error
+     */
+    private function connHasGoneAway(int $transID, string $real, PDO $CONN): bool
     {
-        if (!_CLI or $try > 1) return false;
         if (!$CONN->getAttribute(PDO::ATTR_PERSISTENT)) return false;
 
         $time = time();
@@ -244,6 +250,7 @@ final class PdoContent
             if ($try) throw new Error('服务器状态错误，且无法连接成功', 1, 1);
             return true;
         }
+
         return false;
     }
 
@@ -307,10 +314,10 @@ final class PdoContent
             }
         }
 
-        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN, $try)) {
-            echo "MysqlPDO has gone away, try Now!\n";
-            echo "Pool CreateTime:{$this->pool->createTime}\n";
-            goto tryExe;
+        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN)) {
+            if (($try++) < 3) goto tryExe;
+            if (_CLI) echo "Pool CreateTime:{$this->pool->createTime}\n";
+            throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
         }
 
         $debug = true;
@@ -333,7 +340,7 @@ final class PdoContent
             'runTime' => ($time_b - $debugOption['ready']) * 1000,
             'result' => is_object($result) ? 'Result' : var_export($result, true),
         ];
-        if (($option['limit'] ?? 0) > 0 and $debug and !_CLI and $debugOption['runTime'] > $option['limit']) {
+        if (($option['limit'] ?? 0) > 0 and !_CLI and $debugOption['runTime'] > $option['limit']) {
             $trueSQL = str_replace(array_keys($option['param']), array_map(function ($v) {
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
@@ -447,9 +454,10 @@ final class PdoContent
             }
         }
 
-        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN, $try)) {
-            echo "MysqlPDO has gone away, try Now!\n";
-            goto tryExe;
+        if ($this->_checkGoneAway and $this->connHasGoneAway($transID, $real, $CONN)) {
+            if (($try++) < 3) goto tryExe;
+            if (_CLI) echo "Pool CreateTime:{$this->pool->createTime}\n";
+            throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
         }
 
         $debug = true;
@@ -814,13 +822,12 @@ final class PdoContent
     }
 
     /**
-     * 创建事务开始，或直接执行批量事务
      * @param int $trans_id
-     * @param array $batch_SQLs
-     * @return bool|Builder
+     * @param int $traceLevel
+     * @return Builder
      * @throws Error
      */
-    public function trans(int $trans_id = 1, array $batch_SQLs = [])
+    public function builder(int $trans_id = 1, int $traceLevel = 1): Builder
     {
         if ($trans_id === 0) {
             throw new Error("Trans Error: 事务ID须从1开始，不可以为0。", 1);
@@ -836,71 +843,100 @@ final class PdoContent
 
         $CONN = $this->connect(true, $trans_id);//连接数据库，直接选择主库
 
-        if (_CLI and $this->connHasGoneAway($trans_id, $real, $CONN, $try++)) {
-            echo "MysqlPDO has gone away, try Now!\n";
-            goto tryExe;
-        }
-
-        if ($CONN->inTransaction()) {
-            throw new Error("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中", 1);
-        }
-
-        if (!$CONN->beginTransaction()) {
-            throw new Error("PDO_Error :  启动事务失败。", 1);
-        }
-        $this->_trans_run[$trans_id] = true;
-        $this->_trans_error = [];
-        /**
-         * 直接批量事务
-         */
-        if (!empty($batch_SQLs)) {
-            foreach ($batch_SQLs as $sql) {
-                $option = [
-                    'param' => false,
-                    'prepare' => true,
-                    'count' => false,
-                    'fetch' => 0,
-                    'bind' => [],
-                    'trans_id' => $trans_id,
-                    'action' => strtolower(substr($sql, 0, strpos($sql, ' '))),
-                ];
-                $this->query($sql, $option, $CONN, 1);
-            }
-            $this->_trans_run[$trans_id] = false;
-            return $CONN->commit();
+        if ($this->_checkGoneAway and $this->connHasGoneAway($trans_id, $real, $CONN)) {
+            if (($try++) < 3) goto tryExe;
+            if (_CLI) echo "Pool CreateTime:{$this->pool->createTime}\n";
+            throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
         }
 
         return new Builder($this, boolval($this->_CONF['param'] ?? 0), $trans_id);
     }
 
     /**
+     * 创建事务开始，或直接执行批量事务
+     * @param int $trans_id
+     * @return Builder
+     * @throws Error
+     */
+    public function trans(int $trans_id = 1): Builder
+    {
+        return $this->builder($trans_id)->trans($trans_id);
+    }
+
+    public function trans_batch(array $batch_SQLs)
+    {
+        $CONN = $this->connect(true, 1);//连接数据库，直接选择主库
+
+        foreach ($batch_SQLs as $sql) {
+            $option = [
+                'param' => false,
+                'prepare' => true,
+                'count' => false,
+                'fetch' => 0,
+                'bind' => [],
+                'trans_id' => 1,
+                'action' => strtolower(substr($sql, 0, strpos($sql, ' '))),
+            ];
+            $this->query($sql, $option, $CONN, 1);
+        }
+
+        return $CONN->commit();
+    }
+
+    public function trans_star(int $transID = 1)
+    {
+        $CONN = $this->_pool['master'][$transID];
+
+        if ($CONN->inTransaction()) {
+            throw new Error("Trans Begin Error: 当前正处于未完成的事务{$transID}中", 1);
+        }
+
+        if (!$CONN->beginTransaction()) {
+            throw new Error("PDO_Error :  启动事务失败。", 1);
+        }
+        $this->_trans_error = [];
+
+        $this->_trans_run[$transID] = true;
+        return $this;
+    }
+
+
+    /**
      * 提交事务
      * @param int $trans_id
+     * @param bool $rest
      * @return array|bool
      * @throws Error
      */
-    public function trans_commit(int $trans_id)
+    public function trans_commit(int $trans_id, bool $rest)
     {
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
             if (!empty($this->_trans_error)) return $this->_trans_error;
             return false;
         }
+
         /**
          * @var $CONN PDO
          */
         $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
-            $this->close();
+            if ($rest) $this->close();
             throw new Error("Trans Commit Error: 当前没有处于事务{$trans_id}中", 1);
         }
+
         $this->_trans_run[$trans_id] = false;
         $commit = $CONN->commit();
-        $this->close();
-        !_CLI and $this->pool->debug([
-            'transID' => $trans_id,
-            'timestamp' => microtime(true),
-            'value' => var_export($commit, true)
-        ]);
+
+        if ($rest) $this->close();
+
+        if (!_CLI) {
+            $this->pool->debug([
+                'transID' => $trans_id,
+                'timestamp' => microtime(true),
+                'value' => var_export($commit, true)
+            ]);
+        }
+
         return $commit;
     }
 

@@ -98,18 +98,37 @@ final class Mysql
     /**
      * @param int $trans_id
      * @param array $batch_SQLs
-     * @return bool|Builder
+     * @return Builder
      * @throws Error
      */
-    public function trans(int $trans_id = 1, array $batch_SQLs = [])
+    public function trans(int $trans_id = 1, array $batch_SQLs = []): Builder
     {
-        return $this->MysqlObj($trans_id)->trans($trans_id, $batch_SQLs);
+        return $this->MysqlObj($trans_id)->trans($trans_id);
+    }
+
+    /**
+     * @param int $trans_id
+     * @return Builder
+     * @throws Error
+     */
+    public function builder(int $trans_id = 1): Builder
+    {
+        return $this->MysqlObj($trans_id)->builder($trans_id);
+    }
+
+    /**
+     * @param array $batch_SQLs
+     * @return bool
+     */
+    public function batch(array $batch_SQLs): bool
+    {
+        return $this->MysqlObj(1)->trans_batch($batch_SQLs);
     }
 
     /**
      * 清除自身的一些对象变量
      */
-    public function clear_initial()
+    public function clear_initial(): void
     {
         //这两个值是程序临时指定的，与model自身的_table和_pri用处相同，优先级高
         $this->_table = '';

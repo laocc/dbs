@@ -125,15 +125,22 @@ final class Builder
     }
 
 
+    public function trans(int $transID = 1)
+    {
+        $this->_PDO->trans_star($transID);
+        $this->_Trans_ID = 1;
+        return $this;
+    }
+
     /**
      * 事务结束，提交。
      * @param bool $rest
-     * @return string|bool
+     * @return array|bool
      */
     public function commit(bool $rest = true)
     {
-        $val = $this->_PDO->trans_commit($this->_Trans_ID);
-        if ($rest && is_array($val)) return $val['error'];
+        $val = $this->_PDO->trans_commit($this->_Trans_ID, $rest);
+        if (is_array($val)) return $val;
 
         if (!empty($this->_cache)) {
             $hash = $this->_PDO->pool->cache();
@@ -143,6 +150,11 @@ final class Builder
         }
 
         return $val;
+    }
+
+    public function close()
+    {
+        $this->_PDO->close();
     }
 
     /**
