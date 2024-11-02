@@ -69,7 +69,7 @@ final class Builder
      * 清除所有现有的`Query_builder`设置内容
      * @param bool $clean_all
      */
-    private function clean_builder(bool $clean_all = true)
+    private function clean_builder(bool $clean_all = true): void
     {
         $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
         $this->_select = $this->_join = $this->_join_select = array();
@@ -124,10 +124,15 @@ final class Builder
         return $this;
     }
 
-
-    public function trans(int $transID = 1)
+    /**
+     * @param int $transID
+     * @param int $prev
+     * @return Builder
+     * @throws Error
+     */
+    public function trans(int $transID = 1, int $prev = 1): Builder
     {
-        $this->_PDO->trans_star($transID);
+        $this->_PDO->trans_star($transID, $prev + 1);
         $this->_Trans_ID = 1;
         return $this;
     }
@@ -160,12 +165,13 @@ final class Builder
     /**
      * 检查值是否合法，若=false，则回滚事务
      * @param bool $value ，为bool表达式结果，一般如：!!$ID，或：$val>0
+     *      string $msg
      * @return bool 返回$value相反的值，即：返回true表示被回滚了，false表示正常
      */
-    public function back(bool $value): bool
+    public function back(bool $value, string $msg = '主动回退'): bool
     {
         if ($value) return false;
-        return $this->_PDO->trans_back($this->_Trans_ID);
+        return $this->_PDO->trans_back($this->_Trans_ID, $msg);
     }
 
     /**

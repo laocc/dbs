@@ -86,7 +86,6 @@ abstract class DbModel extends Library
         $mysql = $this->Mysql();
         if (method_exists($mysql, $name) and is_callable([$mysql, $name])) {
             return $mysql->{$name}(...$arguments);
-//            return call_user_func_array([$mysql, $name], $arguments);
         }
         esp_error("MYSQL::{$name}() methods not exists.");
         return null;
@@ -94,16 +93,12 @@ abstract class DbModel extends Library
 
     final public function __get($name)
     {
-        switch ($name) {
-            case 'paging':
-                return $this->_controller->_pool->paging;
-            case 'table':
-                return $this->_controller->_pool->_mysql->_table;
-            case 'id':
-                return 0;
-        }
-
-        return null;
+        return match ($name) {
+            'paging' => $this->_controller->_pool->paging,
+            'table' => $this->_controller->_pool->_mysql->_table,
+            'id' => 0,
+            default => null,
+        };
     }
 
 
@@ -141,7 +136,7 @@ abstract class DbModel extends Library
     public function trans(int $transID = 1): Builder
     {
         $mysql = $this->Mysql('');
-        return $mysql->trans($transID);
+        return $mysql->trans($transID, 1);
     }
 
     /**
@@ -176,7 +171,7 @@ abstract class DbModel extends Library
     /**
      * 释放链接
      *
-     * @param string|null $db
+     * @param string $db
      * @return Bool
      */
     final public function release(string $db = 'mysql'): bool
@@ -185,8 +180,9 @@ abstract class DbModel extends Library
     }
 
     /**
-     * @param string|null $table
+     * @param string $table
      * @return Mysql
+     * @throws Error
      */
     final public function table(string $table = ''): Mysql
     {
@@ -195,10 +191,10 @@ abstract class DbModel extends Library
 
     /**
      * @param int $db
-     * @param int $traceLevel
      * @return Redis
+     * @throws Error
      */
-    final public function Redis(int $db = 0, int $traceLevel = 0): Redis
+    final public function Redis(int $db = 0): Redis
     {
         return $this->_controller->_pool->redis($db);
     }

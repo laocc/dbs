@@ -59,10 +59,9 @@ final class Mysql
     /**
      * 创建一个Mysql实例
      * @param int $tranID
-     * @param int $traceLevel
      * @return PdoContent
      */
-    private function MysqlObj(int $tranID = 0, int $traceLevel = 0): PdoContent
+    private function MysqlObj(int $tranID = 0): PdoContent
     {
         if ($tranID === 1) $tranID = $this->_tranIndex++;
 
@@ -97,31 +96,35 @@ final class Mysql
 
     /**
      * @param int $trans_id
+     * @param int $prev
      * @return Builder
      * @throws Error
      */
-    public function trans(int $trans_id = 1): Builder
+    public function trans(int $trans_id = 1, int $prev = 1): Builder
     {
-        return $this->MysqlObj($trans_id)->trans($trans_id);
+        return $this->MysqlObj($trans_id)->trans($trans_id, $prev + 1);
     }
 
     /**
      * @param int $trans_id
+     * @param int $prev
      * @return Builder
      * @throws Error
      */
-    public function builder(int $trans_id = 1): Builder
+    public function builder(int $trans_id = 1, int $prev = 1): Builder
     {
-        return $this->MysqlObj($trans_id)->builder($trans_id);
+        return $this->MysqlObj($trans_id)->builder($trans_id, $prev + 1);
     }
 
     /**
      * @param array $batch_SQLs
+     * @param int $prev
      * @return bool
+     * @throws Error
      */
-    public function batch(array $batch_SQLs): bool
+    public function batch(array $batch_SQLs, int $prev = 1): bool
     {
-        return $this->MysqlObj(1)->trans_batch($batch_SQLs);
+        return $this->MysqlObj(1)->trans_batch($batch_SQLs, $prev + 1);
     }
 
     /**
@@ -256,7 +259,7 @@ final class Mysql
     public function insert(array $data, bool $full = false, bool $replace = false)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
-        $mysql = $this->MysqlObj(0, 1);
+        $mysql = $this->MysqlObj(0);
         $data = $full ? $data : $this->_FillField($this->_table, $data);
         $obj = $mysql->table($this->_table, $this->_protect);
         $val = $obj->insert($data, $replace, $this->_traceLevel + 1);
@@ -274,7 +277,7 @@ final class Mysql
      */
     public function table(string $table): Builder
     {
-        return $this->MysqlObj(0, 1)->table($table, $this->_protect);
+        return $this->MysqlObj(0)->table($table, $this->_protect);
     }
 
     /**
@@ -290,7 +293,7 @@ final class Mysql
             $where = [$this->PRI() => intval($where)];
         }
 
-        $mysql = $this->MysqlObj(0, 1);
+        $mysql = $this->MysqlObj(0);
         $obj = $mysql->table($this->_table, $this->_protect);
         $val = $obj->where($where)->delete($this->_traceLevel + 1);
 
@@ -314,7 +317,7 @@ final class Mysql
             $where = [$this->PRI() => intval($where)];
         }
         if (empty($where)) throw new Error('Update Where 禁止为空', $this->_traceLevel + 1);
-        $mysql = $this->MysqlObj(0, 1);
+        $mysql = $this->MysqlObj(0);
 
         $obj = $mysql->table($this->_table, $this->_protect);
         $val = $obj->where($where)->update($data, true, $this->_traceLevel + 1);
@@ -335,7 +338,7 @@ final class Mysql
      */
     public function call(string $proName, array $params)
     {
-        $mysql = $this->MysqlObj(0, 1);
+        $mysql = $this->MysqlObj(0);
         $call = $mysql->procedure($proName, $params, $this->_traceLevel + 1);
 
         $val = $call->rows();
@@ -347,7 +350,7 @@ final class Mysql
 
     public function pdo(int $transID = 0): PdoContent
     {
-        return $this->MysqlObj($transID, 1);
+        return $this->MysqlObj($transID);
     }
 
     /**
@@ -357,7 +360,7 @@ final class Mysql
      */
     public function execute(string $sql)
     {
-        return $this->MysqlObj(0, 1)->execute($sql);
+        return $this->MysqlObj(0)->execute($sql);
     }
 
     /**
@@ -369,7 +372,7 @@ final class Mysql
      */
     public function query(string $sql)
     {
-        return $this->MysqlObj(0, 1)->query($sql);
+        return $this->MysqlObj(0)->query($sql);
     }
 
     private function decode_data($data, $decode)
@@ -416,7 +419,7 @@ final class Mysql
      */
     public function get($where, string $orderBy = null, string $sort = 'asc')
     {
-        $mysql = $this->MysqlObj(0, 1);
+        $mysql = $this->MysqlObj(0);
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         if (is_numeric($where)) {
             $where = [$this->PRI() => intval($where)];
@@ -534,7 +537,7 @@ final class Mysql
     public function all(array $where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, int $skip = 0)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
-        $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect)->prepare();
+        $obj = $this->MysqlObj(0)->table($this->_table, $this->_protect)->prepare();
         if ($orderBy === 'PRI') {
             $orderBy = $this->PRI($this->_table);
             if (isset($where['PRI'])) {
@@ -612,7 +615,7 @@ final class Mysql
     public function list($where = null, $orderBy = null, string $sort = 'desc')
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
-        $obj = $this->MysqlObj(0, 1)->table($this->_table, $this->_protect);
+        $obj = $this->MysqlObj(0)->table($this->_table, $this->_protect);
         if (!empty($this->selectKey)) {
             foreach ($this->selectKey as $select) $obj->select(...$select);
         }
@@ -847,7 +850,7 @@ final class Mysql
      */
     public function quote(string $string)
     {
-        return $this->MysqlObj(0, 1)->quote($string);
+        return $this->MysqlObj(0)->quote($string);
     }
 
     /**
