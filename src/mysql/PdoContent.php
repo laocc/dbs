@@ -922,11 +922,11 @@ final class PdoContent
     /**
      * 提交事务
      * @param int $trans_id
-     * @param bool $rest
+     * @param bool $close
      * @return bool|string
      * @throws Error
      */
-    public function trans_commit(int $trans_id, bool $rest): bool|string
+    public function trans_commit(int $trans_id, bool $close = false): bool|string
     {
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
             if (!empty($this->_trans_error)) return $this->_trans_error;
@@ -938,14 +938,14 @@ final class PdoContent
          */
         $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
-            if ($rest) $this->close();
+            if ($close) $this->close();
             throw new Error("Trans Commit Error: 当前没有处于事务{$trans_id}中", 1);
         }
 
         $this->_trans_run[$trans_id] = false;
         $commit = $CONN->commit();
 
-        if ($rest) $this->close();
+        if ($close) $this->close();
 
         if (!_CLI) {
             $this->pool->debug([
@@ -962,9 +962,10 @@ final class PdoContent
      * 回滚事务
      * @param int $trans_id
      * @param $error
+     * @param bool $close
      * @return bool
      */
-    public function trans_back(int $trans_id, $error): bool
+    public function trans_back(int $trans_id, $error, bool $close = false): bool
     {
         $this->_trans_run[$trans_id] = false;
         /**
@@ -972,7 +973,7 @@ final class PdoContent
          */
         $CONN = $this->_pool['master'][$trans_id];
         if (!$CONN->inTransaction()) {
-            $this->close();
+            if ($close) $this->close();
             return true;
         }
         if (is_array($error)) $error = json_encode($error, 320);
@@ -981,7 +982,7 @@ final class PdoContent
         !_CLI and $this->pool->debug($this->_trans_error);
 
         $back = $CONN->rollBack();
-        $this->close();
+        if ($close) $this->close();
         return $back;
     }
 

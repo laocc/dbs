@@ -139,12 +139,12 @@ final class Builder
 
     /**
      * 事务结束，提交。
-     * @param bool $rest
+     * @param bool $close
      * @return string|bool
      */
-    public function commit(bool $rest = false): bool|string
+    public function commit(bool $close = false): bool|string
     {
-        $val = $this->_PDO->trans_commit($this->_Trans_ID, $rest);
+        $val = $this->_PDO->trans_commit($this->_Trans_ID, $close);
         if (is_string($val)) return $val;
 
         if (!empty($this->_cache)) {
@@ -168,10 +168,10 @@ final class Builder
      *      string $msg
      * @return bool 返回$value相反的值，即：返回true表示被回滚了，false表示正常
      */
-    public function back(bool $value, string $msg = '主动回退'): bool
+    public function back(bool $value, string $msg = '主动回退', bool $close = false): bool
     {
         if ($value) return false;
-        return $this->_PDO->trans_back($this->_Trans_ID, $msg);
+        return $this->_PDO->trans_back($this->_Trans_ID, $msg, $close);
     }
 
     /**
