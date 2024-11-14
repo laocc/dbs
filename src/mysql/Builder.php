@@ -133,7 +133,7 @@ final class Builder
     public function trans(int $transID = 1, int $prev = 1): Builder
     {
         $this->_PDO->trans_star($transID, $prev + 1);
-        $this->_Trans_ID = 1;
+        $this->_Trans_ID = $transID;
         return $this;
     }
 
