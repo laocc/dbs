@@ -761,7 +761,7 @@ final class Builder
                         $key = implode(',', $keys);
                         $_where = "{$fieldPro} {$in} ({$key})";
                     } else {
-                        $_where = "{$fieldPro} {$in} (" . implode(',', $value) . ")";
+                        $_where = "{$fieldPro} {$in} ('" . implode("','", $value) . "')";
                     }
                     break;
                 case '%'://mod
