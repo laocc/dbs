@@ -289,7 +289,7 @@ final class Mysql
     public function build_where(array $where): string
     {
         $build = $this->MysqlObj(0)->table('tmp', false);
-        return $build->where($where)->_build_where();
+        return $build->param(false)->where($where)->_build_where();
     }
 
     /**
