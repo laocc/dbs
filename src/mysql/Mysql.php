@@ -281,6 +281,18 @@ final class Mysql
     }
 
     /**
+     * 用$where独立组成where
+     * @param array $where
+     * @return string
+     * @throws Error
+     */
+    public function build_where(array $where): string
+    {
+        $build = $this->MysqlObj(0)->table('tmp', false);
+        return $build->where($where)->_build_where();
+    }
+
+    /**
      * 删
      * @param $where
      * @return bool|int|string

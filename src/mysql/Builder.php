@@ -1039,7 +1039,7 @@ final class Builder
      * 创建Where查询字符串
      * @return string
      */
-    private function _build_where(): string
+    public function _build_where(): string
     {
         if (empty($this->_where)) return '';
         if ($this->_where_group_in) {
