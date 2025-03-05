@@ -1593,7 +1593,7 @@ final class Builder
                     $value = $this->quote($value);
                 }
 
-            } elseif (in_array($kFH, ['+', '-', '|', '$', '!'])) { //键以+-结束，或以|&!$结束的位运算
+            } elseif (in_array($kFH, ['+', '-', '|', '$', '!', '^'])) { //键以+-结束，或以|&!$结束的位运算
                 $key = substr($key, 0, -1);
                 if (!is_numeric($value)) throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
                 if ($value < 0) throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为非负数", $tractLevel + 1);
