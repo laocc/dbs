@@ -157,7 +157,7 @@ final class Builder
         return $val;
     }
 
-    public function close()
+    public function close(): void
     {
         $this->_PDO->close();
     }
@@ -288,11 +288,11 @@ final class Builder
      * 暂不支持函数式
      *
      *
-     * @param string|array $fields 选择子句字符串，可以是多个子句用逗号分开的格式
+     * @param array|string $fields 选择子句字符串，可以是多个子句用逗号分开的格式
      * @param bool $add_identifier 是否自动添加标识符，默认是true，对于复杂查询及带函数的查询请设置为false
      * @return $this
      */
-    public function select($fields, bool $add_identifier = null): Builder
+    public function select(array|string $fields, bool $add_identifier = null): Builder
     {
         if (is_array($fields) and !empty($fields)) {
             foreach ($fields as $field) {
@@ -427,7 +427,7 @@ final class Builder
      * @return Builder|string
      * @throws Error
      */
-    public function cache_where(array $where)
+    public function cache_where(array $where): Builder|string
     {
         return $this->cache($where)->where($where);
     }
@@ -452,11 +452,11 @@ final class Builder
      *
      * @param $field
      * @param null $value
-     * @param null $is_OR 若=0则返回组合后的where而不加入现有sql中
-     * @return $this|string
+     * @param null $is_OR
+     * @return Builder|string
      * @throws Error
      */
-    public function where($field, $value = null, $is_OR = null)
+    public function where($field, $value = null, mixed $is_OR = null): string|Builder
     {
         if (empty($field) and is_null($value)) return $this;
 
@@ -536,7 +536,7 @@ final class Builder
 
 
         if ($value === null) {
-            if (preg_match('/^[a-z0-9]+$/i', $field)) {
+            if (preg_match('/^[a-z\d]+$/i', $field)) {
                 $_where = "isnull({$field})";
             } else {
                 /**
@@ -589,7 +589,7 @@ final class Builder
                         $this->_param_data[$key] = $value;
                         $_where = "{$fieldPro} {$pos} like {$key}";
                     } else {
-                        $_where = "{$fieldPro} {$pos} like " . $this->quote($value);
+                        $_where = "{$fieldPro} {$pos} like '" . $this->quote($value) . "'";
                     }
 
                     break;
@@ -640,7 +640,7 @@ final class Builder
                         $this->_param_data[$key] = $value;
                         $_where = "{$fieldPro} != {$key}";
                     } else {
-                        $_where = "{$fieldPro} != " . $this->quote($value) . "";
+                        $_where = "{$fieldPro} != '" . $this->quote($value) . "'";
                     }
 
                     break;
@@ -847,7 +847,7 @@ final class Builder
                         $_where = "{$fieldPro} = {$key}";
 
                     } else {
-                        $_where = "{$fieldPro} = " . $this->quote($value);// 对 $value 进行安全转义
+                        $_where = "{$fieldPro} = '" . $this->quote($value) . "'";// 对 $value 进行安全转义
                     }
             }
         }
@@ -864,7 +864,7 @@ final class Builder
     private function paramKey(string $field): string
     {
         if (strlen($field) > 32) $field = md5($field);
-        return ':' . preg_replace('/[^\w]/i', '', $field) . uniqid();
+        return ':' . preg_replace('/\W/', '', $field) . uniqid();
     }
 
     /**
@@ -879,11 +879,12 @@ final class Builder
     }
 
     /**
-     * @param $field
+     * @param string $field
      * @param null $value
      * @return Builder
+     * @throws Error
      */
-    public function where_or($field, $value = null)
+    public function where_or(string $field, $value = null)
     {
         return $this->where($field, $value, true);
     }
@@ -922,12 +923,13 @@ final class Builder
     }
 
     /**
-     * @param $field
+     * @param string $field
      * @param $data
      * @param bool $is_OR
      * @return Builder
+     * @throws Error
      */
-    public function where_not_in($field, $data, $is_OR = false): Builder
+    public function where_not_in(string $field, $data, bool $is_OR = false): Builder
     {
         return $this->where_in($field, $data, $is_OR, true);
     }
@@ -939,7 +941,7 @@ final class Builder
      * @param array $data
      * @return Builder
      */
-    public function or_where_in($field, array $data): Builder
+    public function or_where_in(string $field, array $data): Builder
     {
         return $this->where_in($field, $data, true);
     }
@@ -947,12 +949,13 @@ final class Builder
     /**
      * 创建一个where like 子句
      * 代码和 where_in差不多
-     * @param $field
+     * @param string $field
      * @param $value
      * @param bool $is_OR
      * @return $this
+     * @throws Error
      */
-    public function where_like($field, $value, $is_OR = false): Builder
+    public function where_like(string $field, $value, bool $is_OR = false): Builder
     {
         if (empty($field) || empty($value)) {
             throw new Error('DB_ERROR: where like 条件不能为空', 1);
@@ -1400,7 +1403,7 @@ final class Builder
     private function replace_tempTable(&$sql)
     {
         if (empty($this->_temp_table)) return;
-        $sql = preg_replace_callback('/(?:\[|<)([a-f0-9]{14})(?:\]|>)/i', function ($matches) {
+        $sql = preg_replace_callback('/(?:\[|<)([a-f\d]{14})(?:\]|>)/i', function ($matches) {
             if (!isset($this->_temp_table[$matches[1]])) return $matches[0];
             $table = $this->_temp_table[$matches[1]];
             unset($this->_temp_table[$matches[1]]);//用完即清除，所以不需要初始化时清空
@@ -1595,8 +1598,8 @@ final class Builder
 
             } elseif (in_array($kFH, ['+', '-', '|', '$', '!', '^'])) { //键以+-结束，或以|&!$结束的位运算
                 $key = substr($key, 0, -1);
-                if (!is_numeric($value)) throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为数字", $tractLevel + 1);
-                if ($value < 0) throw new Error("DB_ERROR: [{$key}]加减操作时，其值必须为非负数", $tractLevel + 1);
+                if (!is_numeric($value)) throw new Error("DB_ERROR: [{$key}]位运算时，其值必须为数字", $tractLevel + 1);
+                if ($value < 0) throw new Error("DB_ERROR: [{$key}]位运算时，其值必须为非负数", $tractLevel + 1);
                 if ($kFH === '!' or $kFH === '$') {
                     //位运算：减法，值为自己先异或value
                     $value = $this->protect_identifier($key) . " - ({$key} & {$value})";
@@ -1728,21 +1731,14 @@ final class Builder
      * @param bool $identifier
      * @return array|mixed|string
      */
-    private function protect_identifier($clause, bool $identifier = true)
+    private function protect_identifier($clause, bool $identifier = true): mixed
     {
-        if (!$this->_protect or !$identifier) return $clause;
-        /**
-         * 处理数组形式传入参数
-         */
-        if (is_array($clause)) {
-            $r = array();
-            foreach ($clause as $cls) {
-                $r[] = $this->protect_identifier($cls, $identifier);
-            }
-            return $r;
+        if (!$this->_protect || !$identifier || $clause === '*') return $clause;
+        if (is_array($clause)) {//处理数组形式传入参数
+            return array_map([$this, 'protect_identifier'], $clause, array_fill(0, count($clause), $identifier));
         }
         if (!is_string($clause)) return $clause;
-        if ($clause === '*') return '*';
+
         $clause = trim(str_replace('`', '', $clause));//先去除已存在的`号
 
 
@@ -1782,17 +1778,20 @@ final class Builder
     /**
      * 给字符串加引号，同时转义元字符
      * @param $data
-     * @return array|string
+     * @return array|mixed|string
      */
-    private function quote($data)
+    private function quote($data): mixed
     {
-        if (is_array($data)) {
+        if (empty($data)) return '';
+        else if (is_string($data)) {
+            return quotemeta($data);
+
+        } else if (is_array($data)) {
             foreach ($data as $i => $v) {
-                if (is_string($v)) $data[$i] = "'" . quotemeta($v) . "'";//转义元字符集
+                if (is_string($v)) $data[$i] = quotemeta($v);//转义元字符集
             }
             return $data;
-        } elseif (is_string($data)) {
-            return "'" . quotemeta($data) . "'";
+
         } else {
             return $data;
         }
