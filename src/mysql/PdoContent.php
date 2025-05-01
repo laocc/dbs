@@ -148,13 +148,10 @@ final class PdoContent
             }
 
             try {
-
                 $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
-                (!_CLI) and $this->pool->debug("{$real}({$trans_id}):{$conStr}");
-
-                if (_CLI and $isTry) {
-                    print_r([$opts, $cnf, $conStr]);
-                }
+                $this->counter('connect', $conStr, -1);
+                if (!_CLI) $this->pool->debug("{$real}({$trans_id}):{$conStr}");
+                if (_CLI and $isTry) print_r([$opts, $cnf, $conStr]);
 
             } catch (PDOException $PdoError) {
                 $err = [];
@@ -163,6 +160,7 @@ final class PdoContent
                 $err['host'] = $host;
                 throw new Error("MysqlPDO Connection failed:" . json_encode($err, 256 | 64));
             }
+
             $this->connect_time[$trans_id] = time();
             return $this->_pool[$real][$trans_id] = $pdo;
 
