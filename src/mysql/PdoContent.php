@@ -343,7 +343,7 @@ final class PdoContent
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
 
-            $this->pool->debug($debugOption, $traceLevel + 1);
+            $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
             $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL], $traceLevel + 1);
         }
 
@@ -355,7 +355,7 @@ final class PdoContent
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
             if ($debug and !_CLI) {
-                $this->pool->debug($debugOption, $traceLevel + 1);
+                $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 $this->pool->error($error, $traceLevel + 1);
             }
 
@@ -369,7 +369,7 @@ final class PdoContent
                         'after' => time() - $this->connect_time[$transID],
                     ]);
                 } else if ($debug) {
-                    $this->pool->debug($debugOption, $traceLevel + 1);
+                    $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
@@ -377,10 +377,10 @@ final class PdoContent
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugOption);
-            ($debug and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
+            ($debug and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
-        ($debug and $debug_sql and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
+        ($debug and $debug_sql and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
         return $result;
     }
 
@@ -491,7 +491,7 @@ final class PdoContent
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
 
-            $this->pool->debug($debugOption, $traceLevel + 1);
+            $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
             $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL], $traceLevel + 1);
         }
 
@@ -503,7 +503,7 @@ final class PdoContent
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
             if ($debug and !_CLI) {
-                $this->pool->debug($debugOption, $traceLevel + 1);
+                $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 $this->pool->error($error, $traceLevel + 1);
             }
 
@@ -518,7 +518,7 @@ final class PdoContent
                         'after' => time() - $this->connect_time[$transID],
                     ]);
                 } else {
-                    ($debug) and $this->pool->debug($debugOption, $traceLevel + 1);
+                    ($debug) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
@@ -529,10 +529,10 @@ final class PdoContent
             }
             if ($debug) $error['sql'] = $sql;
             if (_CLI) print_r($debugOption);
-            ($debug and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
+            ($debug and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
-        ($debug and $debug_sql and !_CLI) and $this->pool->debug($debugOption, $traceLevel + 1);
+        ($debug and $debug_sql and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
         return $result;
     }
 
@@ -946,11 +946,11 @@ final class PdoContent
         if ($close) $this->close();
 
         if (!_CLI) {
-            $this->pool->debug([
+            $this->pool->debug(print_r([
                 'transID' => $trans_id,
                 'timestamp' => microtime(true),
                 'value' => var_export($commit, true)
-            ]);
+            ], true));
         }
 
         return $commit;
