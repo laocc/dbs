@@ -324,7 +324,7 @@ final class PdoContent
         $error = array();//预置的错误信息
 
         $debugOption = [
-            'trans' => var_export($transID, true),
+            'trans' => $transID,
             'server' => $CONN->getAttribute(PDO::FETCH_COLUMN),//服务器IP
             'sql' => $sql,
             'prepare' => (!empty($option['param']) or $option['prepare']) ? 'YES' : 'NO',
@@ -470,7 +470,7 @@ final class PdoContent
         $error = array();//预置的错误信息
 
         $debugOption = [
-            'trans' => var_export($transID, true),
+            'trans' => $transID,
             'server' => $CONN->getAttribute(PDO::FETCH_COLUMN),//服务器IP
             'sql' => $sql,
             'prepare' => (!empty($option['param']) or $option['prepare']) ? 'YES' : 'NO',
