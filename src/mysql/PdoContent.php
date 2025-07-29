@@ -977,7 +977,7 @@ final class PdoContent
         if (is_array($error)) $error = json_encode($error, 320);
         else if (!is_string($error)) $error = strval($error);
         $this->_trans_error = $error;
-        !_CLI and $this->pool->debug($this->_trans_error);
+        !_CLI and $this->pool->debug(['PDO' => 'rollBack', 'error' => $error]);
 
         $back = $CONN->rollBack();
         if ($close) $this->close();
