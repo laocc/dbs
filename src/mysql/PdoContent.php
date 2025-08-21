@@ -23,7 +23,6 @@ final class PdoContent
     public string $dbName;
     public array $_error = array();//每个连接的错误信息
     public bool $_debug_sql = false;
-    private int $debugOption = 0;
 
     /**
      * PdoContent constructor.
@@ -283,7 +282,6 @@ final class PdoContent
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
         }
-        if (_CLI and ($this->debugOption & 1)) echo "{$sql}\n";
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
             $option = [
@@ -385,13 +383,6 @@ final class PdoContent
     }
 
 
-    public function setDebugOption(int $val)
-    {
-        $this->debugOption = $val;
-        return $this;
-    }
-
-
     /**
      * 执行sql
      * 此方法内若发生错误，必须以string返回
@@ -407,7 +398,6 @@ final class PdoContent
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
         }
-        if (_CLI and ($this->debugOption & 1)) echo "{$sql}\n";
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
             $option = [
@@ -466,7 +456,6 @@ final class PdoContent
             throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
         }
 
-        $debug = true;
         $debug_sql = ($this->_debug_sql or (($option['debug_sql'] ?? null) !== false));
 
         //数据操作时，若当前`trans_run`=false，则说明刚才被back过了或已经commit，后面的数据不再执行
@@ -541,7 +530,7 @@ final class PdoContent
             return json_encode($error, 256 | 64);
         }
 
-        if (_CLI and $debug_sql) print_r($debugOption);
+        if (_CLI and $this->_debug_sql) print_r($debugOption);
 
         (!_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
         return $result;
