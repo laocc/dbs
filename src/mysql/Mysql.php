@@ -90,7 +90,7 @@ final class Mysql
      */
     public function debug(bool $debug): Mysql
     {
-        $this->config['debug_sql'] = $debug;
+        $this->config['_cli_debug'] = $debug;
         return $this;
     }
 

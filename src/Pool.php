@@ -41,11 +41,13 @@ final class Pool
 
     public function debug($data, int $lev = 1): void
     {
+        if (_CLI) return;
         $this->controller->_dispatcher->debug($data, $lev + 1);
     }
 
     public function error($data, int $lev = 1): void
     {
+        if (_CLI) return;
         $this->controller->_dispatcher->error($data, $lev + 1);
     }
 

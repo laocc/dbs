@@ -23,6 +23,7 @@ final class PdoContent
     public string $dbName;
     public array $_error = array();//每个连接的错误信息
     public bool $_debug_sql = false;
+    public bool $_cli_debug = false;
 
     /**
      * PdoContent constructor.
@@ -49,6 +50,8 @@ final class PdoContent
         if (isset($this->_CONF['debug_sql'])) {
             $this->_debug_sql = boolval($this->_CONF['debug_sql']);
         }
+
+        if (_CLI) $this->_cli_debug = boolval($this->_CONF['_cli_debug'] ?? 0);
 
     }
 
@@ -320,7 +323,7 @@ final class PdoContent
 
         $error = array();//预置的错误信息
 
-        $debugOption = [
+        $runResult = [
             'trans' => $transID,
             'server' => $CONN->getAttribute(PDO::FETCH_COLUMN),//服务器IP
             'sql' => $sql,
@@ -330,35 +333,35 @@ final class PdoContent
         ];
         $result = $this->select($CONN, $sql, $option, $error, $traceLevel + 1);//执行
 
-        $debugOption += [
+        $runResult += [
             'finish' => $time_b = microtime(true),
-            'runTime' => ($time_b - $debugOption['ready']) * 1000,
+            'runTime' => ($time_b - $runResult['ready']) * 1000,
             'result' => is_object($result) ? 'Result' : var_export($result, true),
         ];
-        if (($option['limit'] ?? 0) > 0 and !_CLI and $debugOption['runTime'] > $option['limit']) {
+        if (($option['limit'] ?? 0) > 0 and !_CLI and $runResult['runTime'] > $option['limit']) {
             $trueSQL = str_replace(array_keys($option['param']), array_map(function ($v) {
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
 
-            $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
-            $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL], $traceLevel + 1);
+            $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
+            $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $runResult, $trueSQL], $traceLevel + 1);
         }
 
         if (!empty($error)) {
-            $debugOption['error'] = $error;
+            $runResult['error'] = $error;
             $this->_error[$transID] = $error;
 
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
-            if ($debug_sql and !_CLI) {
-                $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+            if (!_CLI) {
+                $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
                 $this->pool->error($error, $traceLevel + 1);
             }
 
             if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
                 if (_CLI) {
-                    print_r($debugOption);
+                    print_r($runResult);
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
@@ -366,19 +369,20 @@ final class PdoContent
                         'after' => time() - $this->connect_time[$transID],
                     ]);
                 } else {
-                    $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+                    $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
                 goto tryExe; //重新执行
             }
             $error['sql'] = $sql;
-            if (_CLI) print_r($debugOption);
-            ($debug_sql and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+            if (_CLI) print_r($runResult);
+            else $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
 
-        (!_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+        if ($this->_cli_debug) print_r($runResult);
+        (!_CLI) and $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
         return $result;
     }
 
@@ -456,7 +460,7 @@ final class PdoContent
             throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
         }
 
-        $debug_sql = ($this->_debug_sql or (($option['debug_sql'] ?? null) !== false));
+//        $debug_sql = ($this->_debug_sql or (($option['debug_sql'] ?? null) !== false));
 
         //数据操作时，若当前`trans_run`=false，则说明刚才被back过了或已经commit，后面的数据不再执行
         //更新操作，有事务ID，在运行中，且已被标识为false
@@ -466,7 +470,7 @@ final class PdoContent
 
         $error = array();//预置的错误信息
 
-        $debugOption = [
+        $runResult = [
             'trans' => $transID,
             'server' => $CONN->getAttribute(PDO::FETCH_COLUMN),//服务器IP
             'sql' => $sql,
@@ -478,36 +482,36 @@ final class PdoContent
 
 //        print_r(['$result' => $result, 'act' => $action, '$option' => $option, '$sql' => $sql, '$error' => $error]);
 
-        $debugOption += [
+        $runResult += [
             'finish' => $time_b = microtime(true),
-            'runTime' => ($time_b - $debugOption['ready']) * 1000,
+            'runTime' => ($time_b - $runResult['ready']) * 1000,
             'result' => is_object($result) ? 'Result' : var_export($result, true),
         ];
-        if (($option['limit'] ?? 0) > 0 and !_CLI and $debugOption['runTime'] > $option['limit']) {
+        if (($option['limit'] ?? 0) > 0 and !_CLI and $runResult['runTime'] > $option['limit']) {
             $trueSQL = str_replace(array_keys($option['param']), array_map(function ($v) {
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
 
-            $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
-            $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $debugOption, $trueSQL], $traceLevel + 1);
+            $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
+            $this->pool->error(["SQL耗时超过限定的{$option['limit']}ms", $runResult, $trueSQL], $traceLevel + 1);
         }
 
         if (!empty($error)) {
-            $debugOption['error'] = $error;
+            $runResult['error'] = $error;
             $this->_error[$transID] = $error;
 
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
             if (!_CLI) {
-                $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+                $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
                 $this->pool->error($error, $traceLevel + 1);
             }
 
             if ($try++ < 2 and in_array($errState, [2002, 2006, 2013])) {
                 if (_CLI) {
                     _echo("Pool CreateTime:{$this->pool->createTime}", 'red');
-                    print_r($debugOption);
+                    print_r($runResult);
                     print_r([
                         'id' => $transID,
                         'connect_time' => $this->connect_time[$transID],
@@ -515,7 +519,7 @@ final class PdoContent
                         'after' => time() - $this->connect_time[$transID],
                     ]);
                 } else {
-                    $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+                    $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
@@ -525,14 +529,14 @@ final class PdoContent
                 $this->trans_back($transID, $error);//回滚事务
             }
             $error['sql'] = $sql;
-            if (_CLI) print_r($debugOption);
-            (!_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+            if (_CLI) print_r($runResult);
+            else $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
 
-        if (_CLI and $this->_debug_sql) print_r($debugOption);
+        if ($this->_cli_debug) print_r($runResult);
 
-        (!_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+        (!_CLI) and $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
         return $result;
     }
 
