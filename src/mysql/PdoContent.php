@@ -19,11 +19,11 @@ final class PdoContent
     private string $_trans_error = '';//事务出错状态
     private array $connect_time = array();//连接时间
     private bool $_checkGoneAway = false;
-    private bool $_cli_print_sql = false;
     private int $transID;
     public string $dbName;
     public array $_error = array();//每个连接的错误信息
     public bool $_debug_sql = false;
+    private int $debugOption = 0;
 
     /**
      * PdoContent constructor.
@@ -283,7 +283,7 @@ final class PdoContent
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
         }
-        if (_CLI and $this->_cli_print_sql) echo "{$sql}\n";
+        if (_CLI and ($this->debugOption & 1)) echo "{$sql}\n";
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
             $option = [
@@ -318,8 +318,7 @@ final class PdoContent
             throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
         }
 
-        $debug = true;
-        $debug_sql = (($option['debug_sql'] ?? null) !== false);
+        $debug_sql = ($this->_debug_sql or (($option['debug_sql'] ?? null) !== false));
 
         $error = array();//预置的错误信息
 
@@ -354,7 +353,7 @@ final class PdoContent
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
-            if ($debug and !_CLI) {
+            if ($debug_sql and !_CLI) {
                 $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 $this->pool->error($error, $traceLevel + 1);
             }
@@ -368,21 +367,30 @@ final class PdoContent
                         'now' => time(),
                         'after' => time() - $this->connect_time[$transID],
                     ]);
-                } else if ($debug) {
+                } else {
                     $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
                 goto tryExe; //重新执行
             }
-            if ($debug) $error['sql'] = $sql;
+            $error['sql'] = $sql;
             if (_CLI) print_r($debugOption);
-            ($debug and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+            ($debug_sql and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
-        ($debug and $debug_sql and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+
+        (!_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
         return $result;
     }
+
+
+    public function setDebugOption(int $val)
+    {
+        $this->debugOption = $val;
+        return $this;
+    }
+
 
     /**
      * 执行sql
@@ -399,7 +407,7 @@ final class PdoContent
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
         }
-        if (_CLI and $this->_cli_print_sql) echo "{$sql}\n";
+        if (_CLI and ($this->debugOption & 1)) echo "{$sql}\n";
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
             $option = [
@@ -459,7 +467,7 @@ final class PdoContent
         }
 
         $debug = true;
-        $debug_sql = (($option['debug_sql'] ?? null) !== false);
+        $debug_sql = ($this->_debug_sql or (($option['debug_sql'] ?? null) !== false));
 
         //数据操作时，若当前`trans_run`=false，则说明刚才被back过了或已经commit，后面的数据不再执行
         //更新操作，有事务ID，在运行中，且已被标识为false
@@ -486,7 +494,7 @@ final class PdoContent
             'runTime' => ($time_b - $debugOption['ready']) * 1000,
             'result' => is_object($result) ? 'Result' : var_export($result, true),
         ];
-        if (($option['limit'] ?? 0) > 0 and $debug and !_CLI and $debugOption['runTime'] > $option['limit']) {
+        if (($option['limit'] ?? 0) > 0 and !_CLI and $debugOption['runTime'] > $option['limit']) {
             $trueSQL = str_replace(array_keys($option['param']), array_map(function ($v) {
                 return is_string($v) ? "'{$v}'" : $v;
             }, array_values($option['param'])), $sql);
@@ -502,7 +510,7 @@ final class PdoContent
             $errState = intval($error[1]);
             _CLI and print_r(['try' => $try, 'error' => $errState]);
 
-            if ($debug and !_CLI) {
+            if (!_CLI) {
                 $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 $this->pool->error($error, $traceLevel + 1);
             }
@@ -518,7 +526,7 @@ final class PdoContent
                         'after' => time() - $this->connect_time[$transID],
                     ]);
                 } else {
-                    ($debug) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+                    $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
                 }
                 unset($this->_pool[$real][$transID]);
                 $CONN = null;
@@ -527,12 +535,15 @@ final class PdoContent
             } else if ($transID > 0 and $upData) {
                 $this->trans_back($transID, $error);//回滚事务
             }
-            if ($debug) $error['sql'] = $sql;
+            $error['sql'] = $sql;
             if (_CLI) print_r($debugOption);
-            ($debug and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+            (!_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
             return json_encode($error, 256 | 64);
         }
-        ($debug and $debug_sql and !_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
+
+        if (_CLI and $debug_sql) print_r($debugOption);
+
+        (!_CLI) and $this->pool->debug(print_r($debugOption, true), $traceLevel + 1);
         return $result;
     }
 

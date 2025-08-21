@@ -94,6 +94,12 @@ final class Mysql
         return $this;
     }
 
+    public function setConfig(array $conf)
+    {
+        $this->config = $conf + $this->config;
+        return $this;
+    }
+
     /**
      * @param int $trans_id
      * @param int $prev
