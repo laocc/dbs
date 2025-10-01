@@ -150,8 +150,10 @@ final class PdoContent
             }
 
             try {
+                if (!_CLI) $this->pool->debug()->timer('PDO before connect');
                 $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
                 $this->counter('connect', $conStr, -1);
+                if (!_CLI) $this->pool->debug()->timer('PDO after connect');
                 if (!_CLI) $this->pool->debug("{$real}({$trans_id}):{$conStr}");
                 if (_CLI and $isTry) print_r([$opts, $cnf, $conStr]);
 

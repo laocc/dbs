@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace esp\dbs;
 
+use esp\debug\Debug;
 use esp\error\Error;
 use esp\core\Controller;
 use esp\dbs\apcu\Apcu;
@@ -39,10 +40,15 @@ final class Pool
         if (isset($controller->_counter)) $this->counter = &$controller->_counter;
     }
 
-    public function debug($data, int $lev = 1): void
+    /**
+     * @param $data
+     * @param int $lev
+     * @return Debug|false|null
+     */
+    public function debug($data = '_R_DEBUG_', int $lev = 1)
     {
-        if (_CLI) return;
-        $this->controller->_dispatcher->debug($data, $lev + 1);
+        if (_CLI) return null;
+        return $this->controller->_dispatcher->debug($data, $lev + 1);
     }
 
     public function error($data, int $lev = 1): void
