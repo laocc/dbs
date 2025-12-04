@@ -217,9 +217,9 @@ abstract class DbModel extends Library
         return $this->_controller->_pool->mongodb($table);
     }
 
-    final public function sqlite(): Sqlite
+    final public function sqlite(string $file = null): Sqlite
     {
-        return $this->_controller->_pool->sqlite();
+        return $this->_controller->_pool->sqlite($file);
     }
 
     final public function yac(string $table): Yac
