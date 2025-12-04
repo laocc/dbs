@@ -21,6 +21,7 @@ final class Sqlite
     private string $fields = '*';
     private string $limit = '';
     private string $offset = '';
+    public bool $isNew = false;
 
     public function __construct(Pool $pool, array $conf)
     {
@@ -39,9 +40,11 @@ final class Sqlite
 
         // 连接SQLite（文件不存在会自动创建，无需手动fopen）
         try {
+
             $this->db = new PDO("sqlite:{$this->conf['db']}");
             $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // 开启异常报错
             $this->db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC); // 默认关联数组
+
         } catch (\PDOException $e) {
             throw new Error('Sqlite连接失败: ' . $e->getMessage());
         }

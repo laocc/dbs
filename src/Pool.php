@@ -128,12 +128,13 @@ final class Pool
         return $this->_mongodb = new Mongodb($this, $conf, $table);
     }
 
-    public function sqlite(): Sqlite
+    public function sqlite(string $file = null): Sqlite
     {
         if (isset($this->_sqlite)) return $this->_sqlite;
 
-        $conf = $this->config['sqlite'] ?? null;
-        if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(sqlite)项');
+        $conf = $this->config['sqlite'] ?? [];
+        if ($file) $conf = ['db' => $file] + $conf;
+        if (empty($conf)) throw new Error('创建Pool时指定的配置数据中没有(sqlite)项');
 
         return $this->_sqlite = new Sqlite($this, $conf);
     }
