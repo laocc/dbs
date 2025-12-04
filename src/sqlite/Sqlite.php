@@ -154,16 +154,17 @@ final class Sqlite
 
     /**
      * 设置WHERE条件（支持参数绑定，防止注入）
-     * @param string $condition 条件语句（如: id = ? OR name = :name）
      * @param array $params 绑定参数（如: [1, 'test'] 或 ['name' => 'test']）
      * @return $this
      */
-    public function where(string $condition, array $params = []): Sqlite
+    public function where(array $params = []): Sqlite
     {
-        if (!empty($condition)) {
-            $this->where = 'WHERE ' . $condition;
-            $this->whereParams = $params;
+        $condition = [];
+        foreach ($params as $k => $v) {
+            $condition[] = "`{$k}` = :{$k}";
         }
+        $this->where = 'WHERE ' . implode(' AND ', $condition);
+        $this->whereParams = $params;
         return $this;
     }
 
@@ -228,10 +229,14 @@ final class Sqlite
 
     /**
      * 获取单条数据
+     * @param array $where
      * @return array|null
+     * @throws Error
      */
-    public function get(): ?array
+    public function get(array $where = []): ?array
     {
+        if (!empty($where)) $this->where($where);
+
         if (empty($this->table)) {
             throw new Error('未指定操作的表');
         }
@@ -249,12 +254,14 @@ final class Sqlite
 
     /**
      * 获取所有数据
+     * @param array $where
      * @param int $offset
      * @return array
      * @throws Error
      */
-    public function all(int $offset = 0): array
+    public function all(array $where = [], int $offset = 0): array
     {
+        if (!empty($where)) $this->where($where);
         if (empty($this->table)) {
             throw new Error('未指定操作的表');
         }
@@ -319,6 +326,8 @@ final class Sqlite
      */
     public function insert(array $data): int
     {
+        if (isset($data[0])) return $this->batchInsert($data);
+
         if (empty($this->table) || empty($data)) {
             throw new Error('未指定表或插入数据为空');
         }
@@ -347,9 +356,9 @@ final class Sqlite
     /**
      * 批量插入数据
      * @param array $list 数据列表 [[字段=>值], ...]
-     * @return bool
+     * @return int
      */
-    public function batchInsert(array $list): bool
+    public function batchInsert(array $list): int
     {
         if (empty($this->table) || empty($list)) {
             throw new Error('未指定表或批量插入数据为空');
@@ -372,15 +381,18 @@ final class Sqlite
         $placeholders = rtrim(str_repeat($placeholder . ',', count($list)), ',');
         $values = [];
 
-        // 拼接所有值
         foreach ($list as $item) {
             $values = array_merge($values, array_values(array_intersect_key($item, array_flip($fields))));
         }
 
         $sql = "INSERT INTO `{$this->table}` (`" . implode('`,`', $fields) . "`) VALUES {$placeholders}";
+
         try {
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute($values);
+            $save = $stmt->execute($values);
+            if ($save) return count($list);
+            else return 0;
+
         } catch (\PDOException $e) {
             throw new Error('批量插入失败: ' . $e->getMessage());
         }
@@ -434,8 +446,12 @@ final class Sqlite
      * 删除数据
      * @return int 受影响的行数
      */
-    public function delete(): int
+    public function delete(array $where = []): int
     {
+        if (!empty($where)) {
+            $this->where($where);
+        }
+
         if (empty($this->table)) {
             throw new Error('未指定操作的表');
         }
@@ -450,6 +466,7 @@ final class Sqlite
             $rowCount = $stmt->rowCount();
             $this->resetQueryParams();
             return $rowCount;
+
         } catch (\PDOException $e) {
             throw new Error('删除数据失败: ' . $e->getMessage());
         }
