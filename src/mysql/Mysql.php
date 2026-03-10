@@ -104,7 +104,6 @@ final class Mysql
      * @param int $trans_id
      * @param int $prev
      * @return Builder
-     * @throws Error
      */
     public function trans(int $trans_id = 1, int $prev = 1): Builder
     {
@@ -115,7 +114,6 @@ final class Mysql
      * @param int $trans_id
      * @param int $prev
      * @return Builder
-     * @throws Error
      */
     public function builder(int $trans_id = 1, int $prev = 1): Builder
     {
@@ -126,7 +124,6 @@ final class Mysql
      * @param array $batch_SQLs
      * @param int $prev
      * @return bool
-     * @throws Error
      */
     public function batch(array $batch_SQLs, int $prev = 1): bool
     {
@@ -240,7 +237,6 @@ final class Mysql
      * @param string $action
      * @param $data
      * @return null
-     * @throws Error
      */
     private function checkRunData(string $action, $data)
     {
@@ -260,7 +256,6 @@ final class Mysql
      * @param bool $replace
      *  bool $returnID 返回新ID,false时返回刚刚添加的数据
      * @return int|null
-     * @throws Error
      */
     public function insert(array $data, bool $full = false, bool $replace = false)
     {
@@ -290,7 +285,6 @@ final class Mysql
      * 用$where独立组成where
      * @param array $where
      * @return string
-     * @throws Error
      */
     public function build_where(array $where): string
     {
@@ -302,7 +296,6 @@ final class Mysql
      * 删
      * @param $where
      * @return bool|int|string
-     * @throws Error
      */
     public function delete($where)
     {
@@ -326,7 +319,6 @@ final class Mysql
      * @param $where
      * @param array $data
      * @return bool|null
-     * @throws Error
      */
     public function update($where, array $data)
     {
@@ -352,7 +344,6 @@ final class Mysql
      * @param string $proName
      * @param array $params
      * @return array|mixed|null
-     * @throws Error
      */
     public function call(string $proName, array $params)
     {
@@ -373,8 +364,6 @@ final class Mysql
 
     /**
      * 不经过安全检测
-     *
-     * @throws Error
      */
     public function execute(string $sql)
     {
@@ -386,7 +375,6 @@ final class Mysql
      *
      * @param string $sql
      * @return bool|Result|int|string|null
-     * @throws Error
      */
     public function query(string $sql)
     {
@@ -433,7 +421,6 @@ final class Mysql
      * @param string|null $orderBy
      * @param string $sort
      * @return mixed|null
-     * @throws Error
      */
     public function get($where, string $orderBy = null, string $sort = 'asc')
     {
@@ -550,7 +537,6 @@ final class Mysql
      * @param int $limit
      * @param int $skip
      * @return array
-     * @throws Error
      */
     public function all(array $where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, int $skip = 0)
     {
@@ -598,7 +584,6 @@ final class Mysql
      *
      * @param array $where
      * @return int
-     * @throws Error
      */
     public function count(array $where = []): int
     {
@@ -614,7 +599,6 @@ final class Mysql
      * @param array $where
      * @param int $limit
      * @return array
-     * @throws Error
      */
     public function rand(array $where = [], int $limit = 1): array
     {
@@ -628,7 +612,6 @@ final class Mysql
      * @param null $orderBy
      * @param string $sort
      * @return array|mixed|null
-     * @throws Error
      */
     public function list($where = null, $orderBy = null, string $sort = 'desc')
     {
@@ -742,7 +725,6 @@ final class Mysql
      * 组合空间-闭合的区域
      * @param array $location
      * @return string
-     * @throws Error
      */
     public function polygon(array $location): string
     {
@@ -864,7 +846,6 @@ final class Mysql
     /**
      * @param string $string
      * @return false|string
-     * @throws Error
      */
     public function quote(string $string)
     {
@@ -978,7 +959,6 @@ final class Mysql
      * @param $select
      * @param $add_identifier
      * @return $this
-     * @throws Error
      */
     public function select($select, $add_identifier = null): Mysql
     {

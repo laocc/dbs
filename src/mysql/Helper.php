@@ -61,7 +61,6 @@ trait Helper
      * 刷新INFORMATION_SCHEMA里的表信息
      * @param string $table
      * @return bool|mixed
-     * @throws Error
      */
     public function analyze(string $table)
     {
@@ -110,7 +109,6 @@ trait Helper
     /**
      * @param false $html
      * @return array|mixed|string
-     * @throws Error
      */
     public function tables(bool $html = false, bool $human = false)
     {
@@ -167,7 +165,6 @@ trait Helper
      * 列出表字段
      * @param string|null $table
      * @return mixed
-     * @throws Error
      */
     public function fields(string $table = null)
     {
@@ -183,15 +180,14 @@ trait Helper
 
     /**
      * 根据数据库中的表，创建相应的模型
-     * @param string $class
+     * @param string $path
+     * @param string $parent
      * @return array|string
      *
      * $class = get_parent_class($modMain)
      * 也就是任何一个已存在的Model实例的命名空间路径
      * 这里所创建的model和该实例在同一目录
      * 调用： $model->createModel(get_parent_class($model))
-     *
-     * @throws Error
      */
     public function createModel(string $path, string $parent)
     {
@@ -245,7 +241,6 @@ PHP;
     /**
      * 列出所有字段的名称
      * @return array
-     * @throws Error
      */
     public function title(): array
     {
@@ -266,7 +261,6 @@ PHP;
      * @param string $table
      * @param array $data
      * @return array|mixed
-     * @throws Error
      */
     protected function _FillField(string $table, array $data)
     {
@@ -299,9 +293,6 @@ PHP;
         }
     }
 
-    /**
-     * @throws Error
-     */
     protected function _AllField(string $table, array $data)
     {
         $field = $this->hash($table)->get('_field');

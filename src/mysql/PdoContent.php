@@ -61,7 +61,6 @@ final class PdoContent
      * @param string $action
      * @param string $sql
      * @param int $traceLevel
-     * @throws Error
      */
     public function counter(string $action, string $sql, int $traceLevel)
     {
@@ -88,7 +87,6 @@ final class PdoContent
      * @param array $params
      * @param int $traceLevel
      * @return bool|int|Result|null
-     * @throws Error
      */
     public function procedure(string $proName, array $params, int $traceLevel = 1)
     {
@@ -102,7 +100,6 @@ final class PdoContent
      * @param int $trans_id
      * @param int $isTry
      * @return mixed|PDO
-     * @throws Error
      */
     private function connect(bool $upData, int $trans_id = 0, int $isTry = 0)
     {
@@ -184,7 +181,6 @@ final class PdoContent
      * 从SQL语句中提取该语句的执行性质
      * @param string $sql
      * @return string
-     * @throws Error
      */
     private function sqlAction(string $sql): string
     {
@@ -195,9 +191,6 @@ final class PdoContent
         }
     }
 
-    /**
-     * @throws Error
-     */
     public function quote($string)
     {
         $CONN = $this->connect(false, 0);
@@ -209,7 +202,6 @@ final class PdoContent
      * @param string $real
      * @param PDO $CONN
      * @return bool true=已离线，false在线
-     * @throws Error
      */
     private function connHasGoneAway(int $transID, string $real, PDO $CONN): bool
     {
@@ -279,8 +271,6 @@ final class PdoContent
 
     /**
      * 直接执行，不进行基本安全检测
-     *
-     * @throws Error
      */
     public function execute(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
     {
@@ -397,7 +387,6 @@ final class PdoContent
      * @param PDO|null $CONN
      * @param int $traceLevel
      * @return bool|string|int|Result
-     * @throws Error
      */
     public function query(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
     {
@@ -829,7 +818,6 @@ final class PdoContent
      * @param int $trans_id
      * @param int $traceLevel
      * @return Builder
-     * @throws Error
      */
     public function builder(int $trans_id = 1, int $traceLevel = 1): Builder
     {
@@ -861,7 +849,6 @@ final class PdoContent
      * @param int $trans_id
      * @param int $prev
      * @return Builder
-     * @throws Error
      */
     public function trans(int $trans_id = 1, int $prev = 1): Builder
     {
@@ -872,7 +859,6 @@ final class PdoContent
      * @param array $batch_SQLs
      * @param int $prev
      * @return bool
-     * @throws Error
      */
     public function trans_batch(array $batch_SQLs, int $prev = 1): bool
     {
@@ -898,7 +884,6 @@ final class PdoContent
      * @param int $transID
      * @param int $prev
      * @return $this
-     * @throws Error
      */
     public function trans_star(int $transID = 1, int $prev = 1)
     {
@@ -928,7 +913,6 @@ final class PdoContent
      * @param int $trans_id
      * @param bool $close
      * @return bool|string
-     * @throws Error
      */
     public function trans_commit(int $trans_id, bool $close = false): bool|string
     {

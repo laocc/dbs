@@ -128,7 +128,6 @@ final class Builder
      * @param int $transID
      * @param int $prev
      * @return Builder
-     * @throws Error
      */
     public function trans(int $transID = 1, int $prev = 1): Builder
     {
@@ -425,7 +424,6 @@ final class Builder
      * 如果还带其他条件，就分别用>where()->cache()
      * @param array $where
      * @return Builder|string
-     * @throws Error
      */
     public function cache_where(array $where): Builder|string
     {
@@ -454,7 +452,6 @@ final class Builder
      * @param null $value
      * @param null $is_OR
      * @return Builder|string
-     * @throws Error
      */
     public function where($field, $value = null, mixed $is_OR = null): string|Builder
     {
@@ -882,7 +879,6 @@ final class Builder
      * @param string $field
      * @param null $value
      * @return Builder
-     * @throws Error
      */
     public function where_or(string $field, $value = null)
     {
@@ -927,7 +923,6 @@ final class Builder
      * @param $data
      * @param bool $is_OR
      * @return Builder
-     * @throws Error
      */
     public function where_not_in(string $field, $data, bool $is_OR = false): Builder
     {
@@ -953,7 +948,6 @@ final class Builder
      * @param $value
      * @param bool $is_OR
      * @return $this
-     * @throws Error
      */
     public function where_like(string $field, $value, bool $is_OR = false): Builder
     {
@@ -1121,7 +1115,6 @@ final class Builder
      * @param string $method 联查的类型，默认是NULL，可选值为'left','right','inner','outer','full','using'
      * @param bool $identifier 是否加保护符
      * @return $this
-     * @throws Error
      */
     public function join(string $table, $_filter, string $select = '*', string $method = 'left', bool $identifier = true): Builder
     {
@@ -1193,7 +1186,6 @@ final class Builder
      * @param string $method 排序的方法，可选值有 'ASC','DESC','RAND' 其中，RAND随机排序和字段名无关（任意即可）
      * @param bool $addProtect
      * @return $this
-     * @throws Error
      */
     public function order(string $field, string $method = 'ASC', bool $addProtect = null): Builder
     {
@@ -1417,7 +1409,6 @@ final class Builder
      * 没有where的情况下是删除表内所有数据
      * @param int $tractLevel
      * @return bool|int|string
-     * @throws Error
      */
     public function delete(int $tractLevel = 1)
     {
@@ -1817,7 +1808,6 @@ final class Builder
      * 组合空间-闭合的区域
      * @param array $location
      * @return string
-     * @throws Error
      */
     public function polygon(array $location): string
     {
