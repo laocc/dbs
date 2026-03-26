@@ -14,36 +14,29 @@ use function esp\helper\numbers;
  */
 final class Mysql
 {
-    private Pool $pool;
-    private Cache $Cache;
-
-    private array $config;
-
-    private int $_cache = 0;
-    private array $_patch_cache = [];
-
-    private array $_MysqlPool = array();
-
-    public string $dbName;//库名
-    public string $_table = '';//表名，创建对象时，或明确指定当前模型的对应表名
-
-    private int $_tranIndex = 0;       //事务
-
-    private int $_traceLevel = 1;
-
-    private array $_order = [];
-    private array $_decode = [];
-    private string $_having = '';//having
-    private bool $_protect = true;//是否加保护符，默认加
-    private int $_count = 0;//执行统计总数，0为统计，0以上不统计
-    private bool $_distinct = false;//消除重复行
-
+    public string $dbName;
+    public string $_table = '';
     protected array $tableJoin = array();
     protected array $forceIndex = [];
     protected array $selectKey = [];
     protected string $groupKey;
+    protected $columnKey;//库名
+    private Pool $pool;//表名，创建对象时，或明确指定当前模型的对应表名
+    private Cache $Cache;       //事务
+    private array $config;
+    private int $_cache = 0;
+    private array $_patch_cache = [];
+    private array $_MysqlPool = array();//having
+    private int $_tranIndex = 0;//是否加保护符，默认加
+    private int $_traceLevel = 1;//执行统计总数，0为统计，0以上不统计
+    private array $_order = [];//消除重复行
+    private array $_decode = [];
+    private string $_having = '';
+    private bool $_protect = true;
+    private int $_count = 0;
+    private bool $_distinct = false;
     private string $sumKey;
-    protected $columnKey;
+    private bool $useGoAgent = false;//走go代理
 
     use Helper;
 
@@ -53,21 +46,6 @@ final class Mysql
         $this->config = $conf;
         $this->dbName = $conf['db'];
         if ($table) $this->_table = $table;
-    }
-
-
-    /**
-     * 创建一个Mysql实例
-     * @param int $tranID
-     * @return PdoContent
-     */
-    private function MysqlObj(int $tranID = 0): PdoContent
-    {
-        if ($tranID === 1) $tranID = $this->_tranIndex++;
-
-        if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
-
-        return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config, $this->pool);
     }
 
     /**
@@ -230,25 +208,6 @@ final class Mysql
         return $this;
     }
 
-
-    /**
-     * 检查执行结果，所有增删改查的结果都不会是字串，所以，如果是字串，则表示出错了
-     * 非字串，即不是json格式的错误内容，退出
-     * @param string $action
-     * @param $data
-     * @return null
-     */
-    private function checkRunData(string $action, $data)
-    {
-        $this->clear_initial();
-        if (!is_string($data)) return null;
-        $json = json_decode($data, true);
-        if (isset($json[2]) or isset($json['2'])) {
-            throw new Error($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel + 2);
-        }
-        throw new Error($data, $this->_traceLevel + 2);
-    }
-
     /**
      * 增
      * @param array $data
@@ -313,7 +272,6 @@ final class Mysql
         return $this->checkRunData('delete', $val) ?: $val;
     }
 
-
     /**
      * 改
      * @param $where
@@ -336,7 +294,6 @@ final class Mysql
 
         return $this->checkRunData('update', $val) ?: $val;
     }
-
 
     /**
      * 执行一个存储过程
@@ -379,40 +336,6 @@ final class Mysql
     public function query(string $sql)
     {
         return $this->MysqlObj(0)->query($sql);
-    }
-
-    private function decode_data($data, $decode)
-    {
-        if (isset($decode['array'])) $decode['json'] = $decode['array'];
-        if (isset($decode['json'])) {
-            foreach ($decode['json'] as $k) {
-                if (is_int($data[$k[1]])) {
-                    $data[$k[0]] = numbers($data[$k[1]]);
-                } else if (is_array($data[$k[1]])) {
-                    $data[$k[0]] = $data[$k[1]];
-                } else {
-                    $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
-                }
-            }
-        }
-
-        if (isset($decode['time'])) {
-            foreach ($decode['time'] as $k) {
-                $data[$k[0]] = date('Y-m-d H:i:s', ($data[$k[1]] ?? 0));
-            }
-        }
-
-        if (isset($decode['point'])) {
-            foreach ($decode['point'] as $k) {
-                preg_match('/POINT\((-?[\d\.]+)\s(-?[\d\.]+)\)/i', $data[$k[1]], $locMch);
-                $data[$k[0]] = [
-                    'longitude' => floatval($locMch[1] ?? 0),
-                    'latitude' => floatval($locMch[2] ?? 0)
-                ];
-            }
-        }
-
-        return $data;
     }
 
     /**
@@ -499,6 +422,10 @@ final class Mysql
             return $ck;
         }
 
+        if ($this->useGoAgent) {
+            return $data[0];
+        }
+
         $val = $data->row($this->columnKey);
         if ($val === false or $val === null) {
             $this->_cache = 0;
@@ -528,7 +455,6 @@ final class Mysql
 
         return $val;
     }
-
 
     /**
      * @param array $where
@@ -575,6 +501,10 @@ final class Mysql
         $data = $obj->skip($skip)->get($limit, $this->_traceLevel + 1);
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('all', $data)) return $v;
+
+        if ($this->useGoAgent) {
+            return $data;
+        }
 
         return $data->rows(0, $this->columnKey, $_decode);
     }
@@ -654,11 +584,22 @@ final class Mysql
         $data = $obj->limit($this->pool->paging->size, $skip)->get(0, $this->_traceLevel + 1);
         $_decode = $this->_decode;//中转一下，下面checkRunData里会清空此值
 
-        if ($this->_count === 0) $this->pool->paging->recode($data->count());
-        if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
+        if ($this->useGoAgent) {
+            if ($this->_count === 0) $this->pool->paging->recode($data['total'] ?? 0);
+//            if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
+        } else {
+            if ($this->_count === 0) $this->pool->paging->recode($data->count());
+            if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
+        }
+
         $this->pool->paging->calculate(0);
 
         if ($v = $this->checkRunData('list', $data)) return $v;
+
+        if ($this->useGoAgent) {
+            return $data['rows'];
+        }
+
         return $data->rows(0, null, $_decode);
     }
 
@@ -740,7 +681,6 @@ final class Mysql
         if ($fst !== $lst) $val[] = $fst;
         return "polygon(" . implode(',', $val) . ")";
     }
-
 
     /**
      * 地址类型转换可识别类型
@@ -862,7 +802,6 @@ final class Mysql
         $mysql->close();
     }
 
-
     public function join(...$data): Mysql
     {
         if (empty($data)) {
@@ -879,7 +818,6 @@ final class Mysql
         $this->groupKey = $groupKey;
         return $this;
     }
-
 
     /**
      * 返回指定键列
@@ -928,6 +866,11 @@ final class Mysql
         return $this;
     }
 
+    public function agent(bool $usAgent = true)
+    {
+        $this->useGoAgent = $usAgent;
+        return $this;
+    }
 
     /**
      * 设置排序字段，优先级高于函数中指定的方式
@@ -981,6 +924,73 @@ final class Mysql
             }
         }
         return $this;
+    }
+
+    /**
+     * 创建一个Mysql实例
+     * @param int $tranID
+     * @return PdoContent
+     */
+    private function MysqlObj(int $tranID = 0): PdoContent
+    {
+        if ($tranID === 1) $tranID = $this->_tranIndex++;
+
+        if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
+        $this->config['agent'] = $this->useGoAgent;
+
+        return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config, $this->pool);
+    }
+
+    /**
+     * 检查执行结果，所有增删改查的结果都不会是字串，所以，如果是字串，则表示出错了
+     * 非字串，即不是json格式的错误内容，退出
+     * @param string $action
+     * @param $data
+     * @return null
+     */
+    private function checkRunData(string $action, $data)
+    {
+        $this->clear_initial();
+        if (!is_string($data)) return null;
+        $json = json_decode($data, true);
+        if (isset($json[2]) or isset($json['2'])) {
+            throw new Error($action . ':' . ($json[2] ?? $json['2']), $this->_traceLevel + 2);
+        }
+        throw new Error($data, $this->_traceLevel + 2);
+    }
+
+    private function decode_data($data, $decode)
+    {
+        if (isset($decode['array'])) $decode['json'] = $decode['array'];
+        if (isset($decode['json'])) {
+            foreach ($decode['json'] as $k) {
+                if (is_int($data[$k[1]])) {
+                    $data[$k[0]] = numbers($data[$k[1]]);
+                } else if (is_array($data[$k[1]])) {
+                    $data[$k[0]] = $data[$k[1]];
+                } else {
+                    $data[$k[0]] = json_decode(($data[$k[1]] ?? ''), true) ?: [];
+                }
+            }
+        }
+
+        if (isset($decode['time'])) {
+            foreach ($decode['time'] as $k) {
+                $data[$k[0]] = date('Y-m-d H:i:s', ($data[$k[1]] ?? 0));
+            }
+        }
+
+        if (isset($decode['point'])) {
+            foreach ($decode['point'] as $k) {
+                preg_match('/POINT\((-?[\d\.]+)\s(-?[\d\.]+)\)/i', $data[$k[1]], $locMch);
+                $data[$k[0]] = [
+                    'longitude' => floatval($locMch[1] ?? 0),
+                    'latitude' => floatval($locMch[2] ?? 0)
+                ];
+            }
+        }
+
+        return $data;
     }
 
 

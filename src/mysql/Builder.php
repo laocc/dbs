@@ -66,34 +66,6 @@ final class Builder
     }
 
     /**
-     * 清除所有现有的`Query_builder`设置内容
-     * @param bool $clean_all
-     */
-    private function clean_builder(bool $clean_all = true): void
-    {
-        $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
-        $this->_select = $this->_join = $this->_join_select = array();
-        $this->_where_group_in = 0;
-
-        $this->_skip = 0;
-        $this->_fetch_type = 1;
-        $this->_count = false;
-        $this->_group = '';
-        $this->_distinct = false;
-        $this->_protect = true;
-        $this->_gzLevel = 5;
-        $this->_cache = [];
-
-        $this->_prepare = $this->_param = $this->_dim_param;
-        $this->_bindKV = $this->_param_data = array();
-
-        //清除全部数据
-        if ($clean_all === false) return;
-        $this->_Trans_ID = 0;
-    }
-
-
-    /**
      * 设置，或获取表名
      *
      * @param string|null $tableName
@@ -182,7 +154,6 @@ final class Builder
         return $this->_PDO->_error[$this->_Trans_ID];
     }
 
-
     /**
      * 使用预处理方式
      * @param bool|true $bool
@@ -228,7 +199,6 @@ final class Builder
         return $this;
     }
 
-
     /**
      * 消除重复行
      * @param bool $bool
@@ -253,25 +223,6 @@ final class Builder
     {
         $this->_fetch_type = $type;
         return $this;
-    }
-
-    /**
-     * 传回mysql的选项
-     * @param string $action
-     * @return array
-     */
-    private function option(string $action): array
-    {
-        return [
-            'param' => ($this->_param or $this->_prepare) ? $this->_param_data : [],
-            'prepare' => $this->_param ?: $this->_prepare,
-            'count' => $this->_count,
-            'fetch' => $this->_fetch_type,
-            'bind' => $this->_bindKV,
-            'trans_id' => $this->_Trans_ID,
-            'debug_sql' => $this->_debug_sql,
-            'action' => $action,
-        ];
     }
 
     /**
@@ -322,7 +273,6 @@ final class Builder
 
         return $this;
     }
-
 
     /**
      * 选择字段的最大值
@@ -385,41 +335,6 @@ final class Builder
     }
 
     /**
-     * 执行一个查询函数，如COUNT/MAX/MIN等等
-     *
-     * @param string $func 函数名
-     * @param string $select 字段名
-     * @param string|null $AS 如果需要重命名返回字段，这里是新的字段名
-     * @return $this
-     */
-    private function select_func(string $func, string $select = '*', string $AS = null): Builder
-    {
-        $select = $this->protect_identifier($select);
-        $this->_select[] = strtoupper($func) . "({$select})" . ($AS ? " AS `{$AS}`" : '');
-        return $this;
-    }
-
-    /**
-     * 根据当前选择字符串生成完成的select 语句
-     * @return string
-     */
-    private function _build_select(): string
-    {
-        //($this->_count ? ' SQL_CALC_FOUND_ROWS ' : '') .
-        if (empty($this->_join)) {
-            return (empty($this->_select) ? '*' : implode(',', $this->_select));
-        } else {
-            if (empty($this->_join_select)) {
-                return (empty($this->_select) ? '*' : implode(',', $this->_select));
-            } else if (empty($this->_select)) {
-                return "{$this->_table}.*," . implode(',', $this->_join_select);
-            } else {
-                return implode(',', $this->_select) . ',' . implode(',', $this->_join_select);
-            }
-        }
-    }
-
-    /**
      * where的同时记录也要删除缓存，主要用于在事务中
      * 如果还带其他条件，就分别用>where()->cache()
      * @param array $where
@@ -429,7 +344,6 @@ final class Builder
     {
         return $this->cache($where)->where($where);
     }
-
 
     /**
      * 执行一个Where子句
@@ -858,12 +772,6 @@ final class Builder
         return $this;
     }
 
-    private function paramKey(string $field): string
-    {
-        if (strlen($field) > 32) $field = md5($field);
-        return ':' . preg_replace('/\W/', '', $field) . uniqid();
-    }
-
     /**
      * 执行一个where or 子句
      * @param $field
@@ -969,20 +877,6 @@ final class Builder
         return $this;
     }
 
-    private function _where_insert(string $_where, string $ao): void
-    {
-        if (empty($this->_where)) {
-            $this->_where = $_where;
-        } else {
-            if ($this->_where_group_in === 1) {
-                $this->_where .= " {$_where}";
-            } else {
-                $this->_where .= " {$ao} {$_where} ";
-            }
-            if ($this->_where_group_in) $this->_where_group_in++;
-        }
-    }
-
     /**
      * 开始一个where组，用于建立复杂的where查询，需要与
      * where_group_end()配合使用
@@ -1049,7 +943,6 @@ final class Builder
         return $this->_where;
     }
 
-
     /**
      * limit的辅助跳过
      * @param int $n
@@ -1060,7 +953,6 @@ final class Builder
         $this->_skip = $n;
         return $this;
     }
-
 
     public function sum($sumKey): Builder
     {
@@ -1079,7 +971,6 @@ final class Builder
         $this->_count = $bool;
         return $this;
     }
-
 
     public function debug_sql(bool $df = false): Builder
     {
@@ -1105,7 +996,6 @@ final class Builder
         }
         return $this;
     }
-
 
     /**
      * 创建一个联合查询
@@ -1212,7 +1102,6 @@ final class Builder
         return $this;
     }
 
-
     /**
      * 执行Group 和 having
      *
@@ -1271,36 +1160,6 @@ final class Builder
         return implode(' ', $sql);
     }
 
-
-    private function _build_sum_sql(): string
-    {
-        $sql = array();
-        $sum = ['count(1) as count'];
-        if (isset($this->sumKey)) {
-            foreach ($this->sumKey as $k) $sum[] = "sum(`{$k}`) as `{$k}`";
-        }
-        $sum = implode(',', $sum);
-        $sql[] = "SELECT {$sum} FROM {$this->_table}";
-        if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
-
-        $where = $this->_build_where();
-        if (!empty($this->_join) and !empty($where)) {
-            foreach ($this->_join as $j => $join) {
-                if (stripos($where, $this->_joinTable[$j]) !== false) {
-                    $sql[] = $join;
-                }
-            }
-        }
-
-        if (!empty($where)) $sql[] = "WHERE {$where}";
-
-        if (!empty($this->_group)) $sql[] = "GROUP BY {$this->_group}";
-
-        if (!empty($this->_having)) $sql[] = "HAVING {$this->_having}";
-
-        return implode(' ', $sql);
-    }
-
     /**
      * 存储过程
      *
@@ -1340,12 +1199,11 @@ final class Builder
         return "call {$proName}(" . implode(', ', $pmKey) . ')';
     }
 
-
     /**
      * 获取查询结果
      * @param int $row
      * @param int $tractLevel
-     * @return bool|int|Result|null
+     * @return bool|int|Result|null|array
      */
     public function get(int $row = 0, int $tractLevel = 1)
     {
@@ -1379,7 +1237,6 @@ final class Builder
         return $tmpID;
     }
 
-
     /**
      * @return string
      */
@@ -1387,22 +1244,6 @@ final class Builder
     {
         return $this->_build_get();
     }
-
-
-    /**
-     * @param $sql
-     */
-    private function replace_tempTable(&$sql)
-    {
-        if (empty($this->_temp_table)) return;
-        $sql = preg_replace_callback('/(?:\[|<)([a-f\d]{14})(?:\]|>)/i', function ($matches) {
-            if (!isset($this->_temp_table[$matches[1]])) return $matches[0];
-            $table = $this->_temp_table[$matches[1]];
-            unset($this->_temp_table[$matches[1]]);//用完即清除，所以不需要初始化时清空
-            return "( {$table} ) as {$matches[1]} ";
-        }, $sql);
-    }
-
 
     /**
      * 删除记录，配合where类子句使用以删除指定记录
@@ -1423,7 +1264,6 @@ final class Builder
         $sql = implode(' ', $sql);
         return $this->_PDO->query($sql, $this->option('delete'), null, $tractLevel + 1);
     }
-
 
     /**
      * 一次插入多个值
@@ -1545,7 +1385,6 @@ final class Builder
     {
         return $this->insert($data, true);
     }
-
 
     /**
      * @param array $data
@@ -1711,6 +1550,185 @@ final class Builder
     }
 
     /**
+     * 组合空间-点
+     * @param $lng
+     * @param null $lat
+     * @return string
+     */
+    public function point($lng, $lat = null): string
+    {
+        if (is_null($lat) and is_array($lng)) {
+            $lat = $lng['lat'] ?? ($lng[1] ?? 0);
+            $lng = $lng['lng'] ?? ($lng[0] ?? 0);
+        }
+        return "point({$lng} {$lat})";
+    }
+
+    /**
+     * 组合空间-闭合的区域
+     * @param array $location
+     * @return string
+     */
+    public function polygon(array $location): string
+    {
+        if (count($location) < 3) throw new Error("空间的一个区域至少需要3个点");
+        $val = [];
+        $fst = null;
+        $lst = null;
+        foreach ($location as $loc) {
+            $lst = "{$loc['lng']} {$loc['lat']}";
+            $val[] = $lst;
+            if (is_null($fst)) $fst = $lst;
+        }
+        if ($fst !== $lst) $val[] = $fst;
+        return "polygon(" . implode(',', $val) . ")";
+    }
+
+    /**
+     * 清除所有现有的`Query_builder`设置内容
+     * @param bool $clean_all
+     */
+    private function clean_builder(bool $clean_all = true): void
+    {
+        $this->_table = $this->_where = $this->_limit = $this->_having = $this->_order_by = '';
+        $this->_select = $this->_join = $this->_join_select = array();
+        $this->_where_group_in = 0;
+
+        $this->_skip = 0;
+        $this->_fetch_type = 1;
+        $this->_count = false;
+        $this->_group = '';
+        $this->_distinct = false;
+        $this->_protect = true;
+        $this->_gzLevel = 5;
+        $this->_cache = [];
+
+        $this->_prepare = $this->_param = $this->_dim_param;
+        $this->_bindKV = $this->_param_data = array();
+
+        //清除全部数据
+        if ($clean_all === false) return;
+        $this->_Trans_ID = 0;
+    }
+
+    /**
+     * 传回mysql的选项
+     * @param string $action
+     * @return array
+     */
+    private function option(string $action): array
+    {
+        return [
+            'param' => ($this->_param or $this->_prepare) ? $this->_param_data : [],
+            'prepare' => $this->_param ?: $this->_prepare,
+            'count' => $this->_count,
+            'fetch' => $this->_fetch_type,
+            'bind' => $this->_bindKV,
+            'trans_id' => $this->_Trans_ID,
+            'debug_sql' => $this->_debug_sql,
+            'action' => $action,
+        ];
+    }
+
+    /**
+     * 执行一个查询函数，如COUNT/MAX/MIN等等
+     *
+     * @param string $func 函数名
+     * @param string $select 字段名
+     * @param string|null $AS 如果需要重命名返回字段，这里是新的字段名
+     * @return $this
+     */
+    private function select_func(string $func, string $select = '*', string $AS = null): Builder
+    {
+        $select = $this->protect_identifier($select);
+        $this->_select[] = strtoupper($func) . "({$select})" . ($AS ? " AS `{$AS}`" : '');
+        return $this;
+    }
+
+    /**
+     * 根据当前选择字符串生成完成的select 语句
+     * @return string
+     */
+    private function _build_select(): string
+    {
+        //($this->_count ? ' SQL_CALC_FOUND_ROWS ' : '') .
+        if (empty($this->_join)) {
+            return (empty($this->_select) ? '*' : implode(',', $this->_select));
+        } else {
+            if (empty($this->_join_select)) {
+                return (empty($this->_select) ? '*' : implode(',', $this->_select));
+            } else if (empty($this->_select)) {
+                return "{$this->_table}.*," . implode(',', $this->_join_select);
+            } else {
+                return implode(',', $this->_select) . ',' . implode(',', $this->_join_select);
+            }
+        }
+    }
+
+    private function paramKey(string $field): string
+    {
+        if (strlen($field) > 32) $field = md5($field);
+        return ':' . preg_replace('/\W/', '', $field) . uniqid();
+    }
+
+    private function _where_insert(string $_where, string $ao): void
+    {
+        if (empty($this->_where)) {
+            $this->_where = $_where;
+        } else {
+            if ($this->_where_group_in === 1) {
+                $this->_where .= " {$_where}";
+            } else {
+                $this->_where .= " {$ao} {$_where} ";
+            }
+            if ($this->_where_group_in) $this->_where_group_in++;
+        }
+    }
+
+    private function _build_sum_sql(): string
+    {
+        $sql = array();
+        $sum = ['count(1) as count'];
+        if (isset($this->sumKey)) {
+            foreach ($this->sumKey as $k) $sum[] = "sum(`{$k}`) as `{$k}`";
+        }
+        $sum = implode(',', $sum);
+        $sql[] = "SELECT {$sum} FROM {$this->_table}";
+        if (!empty($this->_forceIndex)) $sql[] = "force index({$this->_forceIndex})";
+
+        $where = $this->_build_where();
+        if (!empty($this->_join) and !empty($where)) {
+            foreach ($this->_join as $j => $join) {
+                if (stripos($where, $this->_joinTable[$j]) !== false) {
+                    $sql[] = $join;
+                }
+            }
+        }
+
+        if (!empty($where)) $sql[] = "WHERE {$where}";
+
+        if (!empty($this->_group)) $sql[] = "GROUP BY {$this->_group}";
+
+        if (!empty($this->_having)) $sql[] = "HAVING {$this->_having}";
+
+        return implode(' ', $sql);
+    }
+
+    /**
+     * @param $sql
+     */
+    private function replace_tempTable(&$sql)
+    {
+        if (empty($this->_temp_table)) return;
+        $sql = preg_replace_callback('/(?:\[|<)([a-f\d]{14})(?:\]|>)/i', function ($matches) {
+            if (!isset($this->_temp_table[$matches[1]])) return $matches[0];
+            $table = $this->_temp_table[$matches[1]];
+            unset($this->_temp_table[$matches[1]]);//用完即清除，所以不需要初始化时清空
+            return "( {$table} ) as {$matches[1]} ";
+        }, $sql);
+    }
+
+    /**
      * 保护标识符
      * 目前处理类似于以下格式：
      *      abc
@@ -1786,42 +1804,6 @@ final class Builder
         } else {
             return $data;
         }
-    }
-
-
-    /**
-     * 组合空间-点
-     * @param $lng
-     * @param null $lat
-     * @return string
-     */
-    public function point($lng, $lat = null): string
-    {
-        if (is_null($lat) and is_array($lng)) {
-            $lat = $lng['lat'] ?? ($lng[1] ?? 0);
-            $lng = $lng['lng'] ?? ($lng[0] ?? 0);
-        }
-        return "point({$lng} {$lat})";
-    }
-
-    /**
-     * 组合空间-闭合的区域
-     * @param array $location
-     * @return string
-     */
-    public function polygon(array $location): string
-    {
-        if (count($location) < 3) throw new Error("空间的一个区域至少需要3个点");
-        $val = [];
-        $fst = null;
-        $lst = null;
-        foreach ($location as $loc) {
-            $lst = "{$loc['lng']} {$loc['lat']}";
-            $val[] = $lst;
-            if (is_null($fst)) $fst = $lst;
-        }
-        if ($fst !== $lst) $val[] = $fst;
-        return "polygon(" . implode(',', $val) . ")";
     }
 
 

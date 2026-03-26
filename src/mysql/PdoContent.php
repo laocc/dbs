@@ -12,18 +12,17 @@ use function esp\helper\_echo;
 final class PdoContent
 {
     public Pool $pool;
-    private array $_pool = [];//进程级的连接池，$master，$slave
-
-    private array $_CONF;//配置定义
-    private array $_trans_run = array();//事务状态
-    private string $_trans_error = '';//事务出错状态
-    private array $connect_time = array();//连接时间
+    public string $dbName;//进程级的连接池，$master，$slave
+    public array $_error = array();//配置定义
+    public bool $_debug_sql = false;//事务状态
+    public bool $_cli_debug = false;//事务出错状态
+    private array $_pool = [];//连接时间
+    private array $_CONF;
+    private array $_trans_run = array();
+    private string $_trans_error = '';
+    private array $connect_time = array();//每个连接的错误信息
     private bool $_checkGoneAway = false;
     private int $transID;
-    public string $dbName;
-    public array $_error = array();//每个连接的错误信息
-    public bool $_debug_sql = false;
-    public bool $_cli_debug = false;
 
     /**
      * PdoContent constructor.
@@ -40,6 +39,7 @@ final class PdoContent
                 'persistent' => false,//是否持久连
                 'param' => true,
                 'cache' => false,
+                'agent' => false,
                 'timeout' => 2,
                 'time_limit' => 5,//单条sql超时报警
             ];
@@ -94,180 +94,11 @@ final class PdoContent
         return $bud->procedure($proName, $params, $traceLevel);
     }
 
-
-    /**
-     * @param bool $upData
-     * @param int $trans_id
-     * @param int $isTry
-     * @return mixed|PDO
-     */
-    private function connect(bool $upData, int $trans_id = 0, int $isTry = 0)
-    {
-        $real = $upData ? 'master' : 'slave';
-        if (!$upData and !isset($this->_CONF['slave'])) $real = 'master';
-
-        //当前缓存过该连接，直接返回
-        if (!$isTry and isset($this->_pool[$real][$trans_id]) and !empty($this->_pool[$real][$trans_id])) {
-            return $this->_pool[$real][$trans_id];
-        }
-
-        $cnf = $this->_CONF;
-        if (!$upData) {
-            $host = $cnf['slave'] ?? $cnf['master'];
-
-            //不是更新操作时，选择从库，需选择一个点
-            if (is_array($host)) {
-                $host = $host[ip2long(_CIP) % count($host)];
-            }
-        } else {
-            $host = $cnf['master'];
-        }
-
-        //自动提交事务=false，默认true,如果有事务ID，则为该事务的状态反值
-        if (isset($this->_trans_run[$trans_id])) {
-            $autoCommit = !$this->_trans_run[$trans_id];
-        } else {
-            $autoCommit = true;
-        }
-
-        try {
-            $opts = array(
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,//错误等级
-                PDO::ATTR_AUTOCOMMIT => $autoCommit,//自动提交事务=false，默认true,如果有事务ID，则为false
-                PDO::ATTR_EMULATE_PREPARES => false,//是否使用PHP本地模拟prepare,禁止
-                PDO::ATTR_PERSISTENT => boolval($cnf['persistent'] ?? 0),//是否启用持久连接
-                PDO::ATTR_TIMEOUT => intval($cnf['timeout']), //设置超时时间，秒，默认=2
-            );
-            if ($host[0] === '/') {//unix_socket
-                $conStr = "mysql:dbname={$cnf['db']};unix_socket={$host};charset={$cnf['charset']};id={$trans_id};";
-            } else {
-                $port = 3306;
-                if (strpos($host, ':') > 0) list($host, $port) = explode(':', "{$host}:3306", 2);
-                $conStr = "mysql:dbname={$cnf['db']};host={$host};port={$port};charset={$cnf['charset']};id={$trans_id};";
-            }
-
-            try {
-                if (!_CLI) $this->pool->debug()->timer('PDO before connect');
-                $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
-                $this->counter('connect', $conStr, -1);
-                if (!_CLI) $this->pool->debug()->timer('PDO after connect');
-                if (!_CLI) $this->pool->debug("{$real}({$trans_id}):{$conStr}");
-                if (_CLI and $isTry) print_r([$opts, $cnf, $conStr]);
-
-            } catch (PDOException $PdoError) {
-                $err = [];
-                $err['code'] = $PdoError->getCode();
-                $err['msg'] = $PdoError->getMessage();
-                $err['host'] = $host;
-                throw new Error("MysqlPDO Connection failed:" . json_encode($err, 256 | 64));
-            }
-
-            $this->connect_time[$trans_id] = time();
-            return $this->_pool[$real][$trans_id] = $pdo;
-
-        } catch (PDOException $PdoError) {
-            /*
-             *信息详细程度取决于$opts里PDO::ATTR_ERRMODE =>
-             * PDO::ERRMODE_SILENT，只简单地设置错误码，默认值
-             * PDO::ERRMODE_WARNING： 还将发出一条传统的 E_WARNING 信息，
-             * PDO::ERRMODE_EXCEPTION，还将抛出一个 PDOException 异常类并设置它的属性来反射错误码和错误信息，
-            */
-            throw new Error("MysqlPDO Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage(), 1, 1);
-        }
-    }
-
-
-    /**
-     * 从SQL语句中提取该语句的执行性质
-     * @param string $sql
-     * @return string
-     */
-    private function sqlAction(string $sql): string
-    {
-        if (preg_match('/^(select|insert|replace|update|delete|alter|analyze|call)\s+.+/is', trim($sql), $matches)) {
-            return strtolower($matches[1]);
-        } else {
-            throw new Error("PDO_Error:SQL语句不合法:{$sql}");
-        }
-    }
-
     public function quote($string)
     {
         $CONN = $this->connect(false, 0);
         return $CONN->quote($string);
     }
-
-    /**
-     * @param int $transID
-     * @param string $real
-     * @param PDO $CONN
-     * @return bool true=已离线，false在线
-     */
-    private function connHasGoneAway(int $transID, string $real, PDO $CONN): bool
-    {
-        if (!$CONN->getAttribute(PDO::ATTR_PERSISTENT)) return false;
-
-        $time = time();
-
-        try {
-
-            $info = $CONN->getAttribute(PDO::ATTR_SERVER_INFO);
-
-        } catch (\Error|\Exception $error) {
-            ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
-            if (_CLI) {
-                print_r([
-                    'id' => $transID,
-                    'connect_time' => $this->connect_time[$transID],
-                    'now' => $time,
-                    'wait' => $time - $this->connect_time[$transID],
-                    'error' => $error->getMessage(),
-                    'code' => $error->getCode(),
-                ]);
-                print_r($this->PdoAttribute($CONN));
-            }
-
-            unset($this->_pool[$real][$transID]);
-            return true;
-        }
-
-        if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
-            if (_CLI) {
-                print_r([
-                    'id' => $transID,
-                    'connect_time' => $this->connect_time[$transID],
-                    'now' => $time,
-                    'wait' => $time - $this->connect_time[$transID],
-                ]);
-                print_r($this->PdoAttribute($CONN));
-            }
-            unset($this->_pool[$real][$transID]);
-            return true;
-        }
-
-        return false;
-    }
-
-    private function PdoAttribute(PDO $pdo): array
-    {
-        $attributes = array(
-            'PARAM_BOOL', 'PARAM_NULL', 'PARAM_LOB', 'PARAM_STMT', 'FETCH_NAMED', 'FETCH_NUM', 'FETCH_BOTH', 'FETCH_OBJ', 'FETCH_BOUND', 'FETCH_COLUMN', 'FETCH_CLASS', 'FETCH_KEY_PAIR',
-            'ATTR_AUTOCOMMIT', 'ATTR_ERRMODE', 'ATTR_SERVER_VERSION', 'ATTR_CLIENT_VERSION', 'ATTR_SERVER_INFO', 'ATTR_CONNECTION_STATUS', 'ATTR_CASE', 'ATTR_DRIVER_NAME', 'ATTR_ORACLE_NULLS', 'ATTR_PERSISTENT',
-            'ATTR_STATEMENT_CLASS', 'ATTR_DEFAULT_FETCH_MODE', 'ATTR_EMULATE_PREPARES', 'ERRMODE_SILENT', 'CASE_NATURAL', 'NULL_NATURAL', 'FETCH_ORI_NEXT', 'FETCH_ORI_LAST',
-            'FETCH_ORI_ABS', 'FETCH_ORI_REL', 'CURSOR_FWDONLY', 'ERR_NONE', 'PARAM_EVT_ALLOC', 'PARAM_EVT_EXEC_POST', 'PARAM_EVT_FETCH_PRE', 'PARAM_EVT_FETCH_POST', 'PARAM_EVT_NORMALIZE',
-        );
-        $attr = [];
-        foreach ($attributes as $val) {
-            $it = constant("\PDO::{$val}");
-            if (is_int($it)) {
-                $attr["PDO::{$val}"] = $pdo->getAttribute($it);
-            } else {
-                $attr["PDO::{$val}"] = $it;
-            }
-        }
-        return $attr;
-    }
-
 
     /**
      * 直接执行，不进行基本安全检测
@@ -378,7 +209,6 @@ final class PdoContent
         return $result;
     }
 
-
     /**
      * 执行sql
      * 此方法内若发生错误，必须以string返回
@@ -386,7 +216,7 @@ final class PdoContent
      * @param array $option
      * @param PDO|null $CONN
      * @param int $traceLevel
-     * @return bool|string|int|Result
+     * @return bool|string|int|Result|array
      */
     public function query(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
     {
@@ -469,6 +299,46 @@ final class PdoContent
             'param' => json_encode($option['param'], 256 | 64),
             'ready' => microtime(true),
         ];
+
+
+        if ($this->_CONF['agent'] ?? 0) {
+            $params = [];
+            $sqlAgent = $sql;
+            preg_match_all('/(:\w+)/', $sql, $pma);
+            if ($action === 'insert') {
+                foreach ($option['param'] as $val) {
+                    $line = [];
+                    foreach ($pma[0] as $key) {
+                        $line[] = $val[$key];
+                    }
+                    $params[] = $line;
+                }
+
+                foreach ($pma[0] as $key) {
+                    $sqlAgent = str_replace($key, '?', $sqlAgent);
+                }
+            } else {
+
+                foreach ($pma[0] as $key) {
+                    $sqlAgent = str_replace($key, '?', $sqlAgent);
+                    $params[] = $option['param'][$key];
+                }
+
+            }
+
+            $payload = ['sql' => $sqlAgent, 'args' => $params, 'count' => $option['count'] ?? false];
+            $agent = $this->requestGateway($payload);
+
+            $runResult += [
+                'finish' => $time_b = microtime(true),
+                'runTime' => ($time_b - $runResult['ready']) * 1000,
+            ];
+            (!_CLI) and $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
+
+            if ($agent['success']) return $agent['result'];
+
+        }
+
         $result = $this->{$action}($CONN, $sql, $option, $error, $traceLevel + 1);//执行
 
 //        print_r(['$result' => $result, 'act' => $action, '$option' => $option, '$sql' => $sql, '$error' => $error]);
@@ -529,6 +399,422 @@ final class PdoContent
 
         (!_CLI) and $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
         return $result;
+    }
+
+    /**
+     * 暂未实现ping
+     * @return bool
+     */
+    public function ping(): bool
+    {
+        return isset($this->_pool['master']);
+    }
+
+    /**
+     * 断开所有链接
+     */
+    public function close(): void
+    {
+        foreach ($this->_pool as $r => &$pool) {
+            foreach ($pool as $id => &$p) $p = null;
+            $pool = null;
+        }
+        $this->_pool = [];
+    }
+
+    /**
+     * @param int $trans_id
+     * @param int $traceLevel
+     * @return Builder
+     */
+    public function builder(int $trans_id = 1, int $traceLevel = 1): Builder
+    {
+        if ($trans_id === 0) {
+            throw new Error("Trans Error: 事务ID须从1开始，不可以为0。", 1);
+        }
+
+        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {
+            throw new Error("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束", 1);
+        }
+
+        $try = 0;
+        tryExe:
+        $real = 'master';
+
+        $CONN = $this->connect(true, $trans_id);//连接数据库，直接选择主库
+
+        if ($this->_checkGoneAway and $this->connHasGoneAway($trans_id, $real, $CONN)) {
+            if (($try++) < 3) goto tryExe;
+            if (_CLI) echo "Pool CreateTime:{$this->pool->createTime}\n";
+            throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
+        }
+
+        return new Builder($this, boolval($this->_CONF['param'] ?? 0), $trans_id);
+    }
+
+    /**
+     * 创建事务开始，或直接执行批量事务
+     * @param int $trans_id
+     * @param int $prev
+     * @return Builder
+     */
+    public function trans(int $trans_id = 1, int $prev = 1): Builder
+    {
+        return $this->builder($trans_id)->trans($trans_id, $prev + 1);
+    }
+
+    /**
+     * @param array $batch_SQLs
+     * @param int $prev
+     * @return bool
+     */
+    public function trans_batch(array $batch_SQLs, int $prev = 1): bool
+    {
+        $CONN = $this->connect(true, 1);//连接数据库，直接选择主库
+
+        foreach ($batch_SQLs as $sql) {
+            $option = [
+                'param' => false,
+                'prepare' => true,
+                'count' => false,
+                'fetch' => 0,
+                'bind' => [],
+                'trans_id' => 1,
+                'action' => strtolower(substr($sql, 0, strpos($sql, ' '))),
+            ];
+            $this->query($sql, $option, $CONN, $prev + 1);
+        }
+
+        return $CONN->commit();
+    }
+
+    /**
+     * @param int $transID
+     * @param int $prev
+     * @return $this
+     */
+    public function trans_star(int $transID = 1, int $prev = 1)
+    {
+        $CONN = $this->_pool['master'][$transID];
+
+        if ($CONN->inTransaction()) {
+            if (_CLI) {
+                _echo("当前正处于未完成的事务{$transID}中，请检查上一次事务是否已提交或退回", 'black', 'red');
+                _echo("如果要执行多次事务，可以用\$mod->builder()获取连接实例后再执行mod->trans()", 'h', 'blue');
+            }
+
+            throw new Error("Trans Begin Error: 当前正处于未完成的事务{$transID}中", $prev + 1);
+        }
+
+        if (!$CONN->beginTransaction()) {
+            throw new Error("PDO_Error :  启动事务失败。", $prev + 1);
+        }
+        $this->_trans_error = '';
+
+        $this->_trans_run[$transID] = true;
+        return $this;
+    }
+
+    /**
+     * 提交事务
+     * @param int $trans_id
+     * @param bool $close
+     * @return bool|string
+     */
+    public function trans_commit(int $trans_id, bool $close = false): bool|string
+    {
+        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
+            if (!empty($this->_trans_error)) return $this->_trans_error;
+            return false;
+        }
+
+        /**
+         * @var $CONN PDO
+         */
+        $CONN = $this->_pool['master'][$trans_id];
+        if (!$CONN->inTransaction()) {
+            if ($close) $this->close();
+            throw new Error("Trans Commit Error: 当前没有处于事务{$trans_id}中", 1);
+        }
+
+        $this->_trans_run[$trans_id] = false;
+        $commit = $CONN->commit();
+
+        if ($close) $this->close();
+
+        if (!_CLI) {
+            $this->pool->debug(print_r([
+                'transID' => $trans_id,
+                'timestamp' => microtime(true),
+                'value' => var_export($commit, true)
+            ], true));
+        }
+
+        return $commit;
+    }
+
+    /**
+     * 回滚事务
+     * @param int $trans_id
+     * @param $error
+     * @param bool $close
+     * @return bool
+     */
+    public function trans_back(int $trans_id, $error, bool $close = false): bool
+    {
+        $this->_trans_run[$trans_id] = false;
+        /**
+         * @var $CONN PDO
+         */
+        $CONN = $this->_pool['master'][$trans_id];
+        if (!$CONN->inTransaction()) {
+            if ($close) $this->close();
+            return true;
+        }
+        if (is_array($error)) $error = json_encode($error, 320);
+        else if (!is_string($error)) $error = strval($error);
+        $this->_trans_error = $error;
+        !_CLI and $this->pool->debug(['PDO' => 'rollBack', 'error' => $error]);
+
+        $back = $CONN->rollBack();
+        if ($close) $this->close();
+        return $back;
+    }
+
+    /**
+     * 检查当前连接是否还在事务之中
+     * @param PDO $CONN
+     * @param int $trans_id
+     * @return bool
+     */
+    public function trans_in(PDO $CONN, int $trans_id = 1): bool
+    {
+        return $CONN->inTransaction();
+    }
+
+    /**
+     * @param bool $upData
+     * @param int $trans_id
+     * @param int $isTry
+     * @return mixed|PDO
+     */
+    private function connect(bool $upData, int $trans_id = 0, int $isTry = 0)
+    {
+        $real = $upData ? 'master' : 'slave';
+        if (!$upData and !isset($this->_CONF['slave'])) $real = 'master';
+
+        //当前缓存过该连接，直接返回
+        if (!$isTry and isset($this->_pool[$real][$trans_id]) and !empty($this->_pool[$real][$trans_id])) {
+            return $this->_pool[$real][$trans_id];
+        }
+
+        $cnf = $this->_CONF;
+        if (!$upData) {
+            $host = $cnf['slave'] ?? $cnf['master'];
+
+            //不是更新操作时，选择从库，需选择一个点
+            if (is_array($host)) {
+                $host = $host[ip2long(_CIP) % count($host)];
+            }
+        } else {
+            $host = $cnf['master'];
+        }
+
+        //自动提交事务=false，默认true,如果有事务ID，则为该事务的状态反值
+        if (isset($this->_trans_run[$trans_id])) {
+            $autoCommit = !$this->_trans_run[$trans_id];
+        } else {
+            $autoCommit = true;
+        }
+
+        try {
+            $opts = array(
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,//错误等级
+                PDO::ATTR_AUTOCOMMIT => $autoCommit,//自动提交事务=false，默认true,如果有事务ID，则为false
+                PDO::ATTR_EMULATE_PREPARES => false,//是否使用PHP本地模拟prepare,禁止
+                PDO::ATTR_PERSISTENT => boolval($cnf['persistent'] ?? 0),//是否启用持久连接
+                PDO::ATTR_TIMEOUT => intval($cnf['timeout']), //设置超时时间，秒，默认=2
+            );
+            if ($host[0] === '/') {//unix_socket
+                $conStr = "mysql:dbname={$cnf['db']};unix_socket={$host};charset={$cnf['charset']};id={$trans_id};";
+            } else {
+                $port = 3306;
+                if (strpos($host, ':') > 0) list($host, $port) = explode(':', "{$host}:3306", 2);
+                $conStr = "mysql:dbname={$cnf['db']};host={$host};port={$port};charset={$cnf['charset']};id={$trans_id};";
+            }
+
+            try {
+                if (!_CLI) $this->pool->debug()->timer('PDO before connect');
+                $pdo = new PDO($conStr, $cnf['username'], $cnf['password'], $opts);
+                $this->counter('connect', $conStr, -1);
+                if (!_CLI) $this->pool->debug()->timer('PDO after connect');
+                if (!_CLI) $this->pool->debug("{$real}({$trans_id}):{$conStr}");
+                if (_CLI and $isTry) print_r([$opts, $cnf, $conStr]);
+
+            } catch (PDOException $PdoError) {
+                $err = [];
+                $err['code'] = $PdoError->getCode();
+                $err['msg'] = $PdoError->getMessage();
+                $err['host'] = $host;
+                throw new Error("MysqlPDO Connection failed:" . json_encode($err, 256 | 64));
+            }
+
+            $this->connect_time[$trans_id] = time();
+            return $this->_pool[$real][$trans_id] = $pdo;
+
+        } catch (PDOException $PdoError) {
+            /*
+             *信息详细程度取决于$opts里PDO::ATTR_ERRMODE =>
+             * PDO::ERRMODE_SILENT，只简单地设置错误码，默认值
+             * PDO::ERRMODE_WARNING： 还将发出一条传统的 E_WARNING 信息，
+             * PDO::ERRMODE_EXCEPTION，还将抛出一个 PDOException 异常类并设置它的属性来反射错误码和错误信息，
+            */
+            throw new Error("MysqlPDO Connection failed:" . $PdoError->getCode() . ',' . $PdoError->getMessage(), 1, 1);
+        }
+    }
+
+    /**
+     * 从SQL语句中提取该语句的执行性质
+     * @param string $sql
+     * @return string
+     */
+    private function sqlAction(string $sql): string
+    {
+        if (preg_match('/^(select|insert|replace|update|delete|alter|analyze|call)\s+.+/is', trim($sql), $matches)) {
+            return strtolower($matches[1]);
+        } else {
+            throw new Error("PDO_Error:SQL语句不合法:{$sql}");
+        }
+    }
+
+    /**
+     * @param int $transID
+     * @param string $real
+     * @param PDO $CONN
+     * @return bool true=已离线，false在线
+     */
+    private function connHasGoneAway(int $transID, string $real, PDO $CONN): bool
+    {
+        if (!$CONN->getAttribute(PDO::ATTR_PERSISTENT)) return false;
+
+        $time = time();
+
+        try {
+
+            $info = $CONN->getAttribute(PDO::ATTR_SERVER_INFO);
+
+        } catch (\Error|\Exception $error) {
+            ////获取属性出错，PHP Warning:  PDO::getAttribute(): MySQL server has gone away in
+            if (_CLI) {
+                print_r([
+                    'id' => $transID,
+                    'connect_time' => $this->connect_time[$transID],
+                    'now' => $time,
+                    'wait' => $time - $this->connect_time[$transID],
+                    'error' => $error->getMessage(),
+                    'code' => $error->getCode(),
+                ]);
+                print_r($this->PdoAttribute($CONN));
+            }
+
+            unset($this->_pool[$real][$transID]);
+            return true;
+        }
+
+        if (empty($info)) {//获取不到有关属性，说明连接可能已经断开
+            if (_CLI) {
+                print_r([
+                    'id' => $transID,
+                    'connect_time' => $this->connect_time[$transID],
+                    'now' => $time,
+                    'wait' => $time - $this->connect_time[$transID],
+                ]);
+                print_r($this->PdoAttribute($CONN));
+            }
+            unset($this->_pool[$real][$transID]);
+            return true;
+        }
+
+        return false;
+    }
+
+    private function PdoAttribute(PDO $pdo): array
+    {
+        $attributes = array(
+            'PARAM_BOOL', 'PARAM_NULL', 'PARAM_LOB', 'PARAM_STMT', 'FETCH_NAMED', 'FETCH_NUM', 'FETCH_BOTH', 'FETCH_OBJ', 'FETCH_BOUND', 'FETCH_COLUMN', 'FETCH_CLASS', 'FETCH_KEY_PAIR',
+            'ATTR_AUTOCOMMIT', 'ATTR_ERRMODE', 'ATTR_SERVER_VERSION', 'ATTR_CLIENT_VERSION', 'ATTR_SERVER_INFO', 'ATTR_CONNECTION_STATUS', 'ATTR_CASE', 'ATTR_DRIVER_NAME', 'ATTR_ORACLE_NULLS', 'ATTR_PERSISTENT',
+            'ATTR_STATEMENT_CLASS', 'ATTR_DEFAULT_FETCH_MODE', 'ATTR_EMULATE_PREPARES', 'ERRMODE_SILENT', 'CASE_NATURAL', 'NULL_NATURAL', 'FETCH_ORI_NEXT', 'FETCH_ORI_LAST',
+            'FETCH_ORI_ABS', 'FETCH_ORI_REL', 'CURSOR_FWDONLY', 'ERR_NONE', 'PARAM_EVT_ALLOC', 'PARAM_EVT_EXEC_POST', 'PARAM_EVT_FETCH_PRE', 'PARAM_EVT_FETCH_POST', 'PARAM_EVT_NORMALIZE',
+        );
+        $attr = [];
+        foreach ($attributes as $val) {
+            $it = constant("\PDO::{$val}");
+            if (is_int($it)) {
+                $attr["PDO::{$val}"] = $pdo->getAttribute($it);
+            } else {
+                $attr["PDO::{$val}"] = $it;
+            }
+        }
+        return $attr;
+    }
+
+    private function requestGateway(array $payload): array
+    {
+        $baseUrl = $this->_CONF['go_http'] ?? '';//'http://127.0.0.1:8080/v1';
+        $unixSocket = $this->_CONF['go_unix'] ?? '';
+        $apiKey = $this->_CONF['go_secret'] ?? '';
+
+        $headers = ['Content-Type: application/json'];
+        if ($apiKey !== '') {
+            $headers[] = 'X-API-Key: ' . $apiKey;
+        }
+
+        if (!isset($payload['sql'])) {
+            if (isset($payload[1])) {
+                $payload = ['trans' => $payload];
+            }
+        }
+
+        $cOption = [
+            CURLOPT_URL => $baseUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        ];
+
+        if ($unixSocket !== '') {
+            $cOption[CURLOPT_UNIX_SOCKET_PATH] = $unixSocket;
+        }
+
+        $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
+        curl_setopt_array($cURL, $cOption);
+
+        $resp = curl_exec($cURL);
+        $errno = curl_errno($cURL);
+        $error = curl_error($cURL);
+//        $infos = curl_getinfo($cURL);
+        $status = (int)curl_getinfo($cURL, CURLINFO_HTTP_CODE);
+        $cURL = null;
+
+//        print_r([$resp, $errno, $error, $infos, $status]);
+
+        if ($errno !== 0) {
+            return [
+                'success' => false,
+                'status' => 0,
+                'message' => "curl error($errno):{$error}",
+                'result' => null,
+            ];
+        }
+
+        return [
+            'success' => $status >= 200 && $status < 300,
+            'status' => $status,
+            'message' => 'ok',
+            'result' => json_decode((string)$resp, true),
+        ];
     }
 
     /**
@@ -666,7 +952,6 @@ final class PdoContent
         }
     }
 
-
     /**
      * @param PDO $CONN
      * @param string $sql
@@ -790,199 +1075,6 @@ final class PdoContent
         }
 
         return new Result($stmt, $count, $sql);
-    }
-
-
-    /**
-     * 暂未实现ping
-     * @return bool
-     */
-    public function ping(): bool
-    {
-        return isset($this->_pool['master']);
-    }
-
-    /**
-     * 断开所有链接
-     */
-    public function close(): void
-    {
-        foreach ($this->_pool as $r => &$pool) {
-            foreach ($pool as $id => &$p) $p = null;
-            $pool = null;
-        }
-        $this->_pool = [];
-    }
-
-    /**
-     * @param int $trans_id
-     * @param int $traceLevel
-     * @return Builder
-     */
-    public function builder(int $trans_id = 1, int $traceLevel = 1): Builder
-    {
-        if ($trans_id === 0) {
-            throw new Error("Trans Error: 事务ID须从1开始，不可以为0。", 1);
-        }
-
-        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {
-            throw new Error("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束", 1);
-        }
-
-        $try = 0;
-        tryExe:
-        $real = 'master';
-
-        $CONN = $this->connect(true, $trans_id);//连接数据库，直接选择主库
-
-        if ($this->_checkGoneAway and $this->connHasGoneAway($trans_id, $real, $CONN)) {
-            if (($try++) < 3) goto tryExe;
-            if (_CLI) echo "Pool CreateTime:{$this->pool->createTime}\n";
-            throw new Error("PDO_Error :  MysqlPDO has gone away", $traceLevel + 1);
-        }
-
-        return new Builder($this, boolval($this->_CONF['param'] ?? 0), $trans_id);
-    }
-
-    /**
-     * 创建事务开始，或直接执行批量事务
-     * @param int $trans_id
-     * @param int $prev
-     * @return Builder
-     */
-    public function trans(int $trans_id = 1, int $prev = 1): Builder
-    {
-        return $this->builder($trans_id)->trans($trans_id, $prev + 1);
-    }
-
-    /**
-     * @param array $batch_SQLs
-     * @param int $prev
-     * @return bool
-     */
-    public function trans_batch(array $batch_SQLs, int $prev = 1): bool
-    {
-        $CONN = $this->connect(true, 1);//连接数据库，直接选择主库
-
-        foreach ($batch_SQLs as $sql) {
-            $option = [
-                'param' => false,
-                'prepare' => true,
-                'count' => false,
-                'fetch' => 0,
-                'bind' => [],
-                'trans_id' => 1,
-                'action' => strtolower(substr($sql, 0, strpos($sql, ' '))),
-            ];
-            $this->query($sql, $option, $CONN, $prev + 1);
-        }
-
-        return $CONN->commit();
-    }
-
-    /**
-     * @param int $transID
-     * @param int $prev
-     * @return $this
-     */
-    public function trans_star(int $transID = 1, int $prev = 1)
-    {
-        $CONN = $this->_pool['master'][$transID];
-
-        if ($CONN->inTransaction()) {
-            if (_CLI) {
-                _echo("当前正处于未完成的事务{$transID}中，请检查上一次事务是否已提交或退回", 'black', 'red');
-                _echo("如果要执行多次事务，可以用\$mod->builder()获取连接实例后再执行mod->trans()", 'h', 'blue');
-            }
-
-            throw new Error("Trans Begin Error: 当前正处于未完成的事务{$transID}中", $prev + 1);
-        }
-
-        if (!$CONN->beginTransaction()) {
-            throw new Error("PDO_Error :  启动事务失败。", $prev + 1);
-        }
-        $this->_trans_error = '';
-
-        $this->_trans_run[$transID] = true;
-        return $this;
-    }
-
-
-    /**
-     * 提交事务
-     * @param int $trans_id
-     * @param bool $close
-     * @return bool|string
-     */
-    public function trans_commit(int $trans_id, bool $close = false): bool|string
-    {
-        if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
-            if (!empty($this->_trans_error)) return $this->_trans_error;
-            return false;
-        }
-
-        /**
-         * @var $CONN PDO
-         */
-        $CONN = $this->_pool['master'][$trans_id];
-        if (!$CONN->inTransaction()) {
-            if ($close) $this->close();
-            throw new Error("Trans Commit Error: 当前没有处于事务{$trans_id}中", 1);
-        }
-
-        $this->_trans_run[$trans_id] = false;
-        $commit = $CONN->commit();
-
-        if ($close) $this->close();
-
-        if (!_CLI) {
-            $this->pool->debug(print_r([
-                'transID' => $trans_id,
-                'timestamp' => microtime(true),
-                'value' => var_export($commit, true)
-            ], true));
-        }
-
-        return $commit;
-    }
-
-    /**
-     * 回滚事务
-     * @param int $trans_id
-     * @param $error
-     * @param bool $close
-     * @return bool
-     */
-    public function trans_back(int $trans_id, $error, bool $close = false): bool
-    {
-        $this->_trans_run[$trans_id] = false;
-        /**
-         * @var $CONN PDO
-         */
-        $CONN = $this->_pool['master'][$trans_id];
-        if (!$CONN->inTransaction()) {
-            if ($close) $this->close();
-            return true;
-        }
-        if (is_array($error)) $error = json_encode($error, 320);
-        else if (!is_string($error)) $error = strval($error);
-        $this->_trans_error = $error;
-        !_CLI and $this->pool->debug(['PDO' => 'rollBack', 'error' => $error]);
-
-        $back = $CONN->rollBack();
-        if ($close) $this->close();
-        return $back;
-    }
-
-    /**
-     * 检查当前连接是否还在事务之中
-     * @param PDO $CONN
-     * @param int $trans_id
-     * @return bool
-     */
-    public function trans_in(PDO $CONN, int $trans_id = 1): bool
-    {
-        return $CONN->inTransaction();
     }
 
 }
