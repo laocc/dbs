@@ -23,6 +23,7 @@ final class PdoContent
     private array $connect_time = array();//每个连接的错误信息
     private bool $_checkGoneAway = false;
     private int $transID;
+    private Agent $agent;
 
     /**
      * PdoContent constructor.
@@ -46,6 +47,7 @@ final class PdoContent
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $this->_CONF['db'];
+        if ($conf['agent'] ?? 0) $this->agent = new Agent($conf, $pool);
 
         if (isset($this->_CONF['debug_sql'])) {
             $this->_debug_sql = boolval($this->_CONF['debug_sql']);
@@ -94,12 +96,6 @@ final class PdoContent
         return $bud->procedure($proName, $params, $traceLevel);
     }
 
-    public function quote($string)
-    {
-        $CONN = $this->connect(false, 0);
-        return $CONN->quote($string);
-    }
-
     /**
      * 直接执行，不进行基本安全检测
      */
@@ -107,6 +103,11 @@ final class PdoContent
     {
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
+        }
+        $action = strtolower($option['action'] ?? 'select');
+
+        if (isset($this->agent)) {
+            return $this->agent->query($action, $sql, $option);
         }
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
@@ -223,6 +224,11 @@ final class PdoContent
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
         }
+        $action = strtolower($option['action']);
+
+        if (isset($this->agent)) {
+            return $this->agent->query($action, $sql, $option);
+        }
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
             $option = [
@@ -238,7 +244,6 @@ final class PdoContent
             ];
         }
 
-        $action = strtolower($option['action']);
         $transID = ($option['trans_id']);
 
         if (!in_array($action, ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze', 'call'])) {
@@ -433,6 +438,10 @@ final class PdoContent
             throw new Error("Trans Error: 事务ID须从1开始，不可以为0。", 1);
         }
 
+        if (isset($this->agent)) {
+            return new Builder($this, boolval($this->_CONF['param'] ?? 0), $trans_id);
+        }
+
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id]) {
             throw new Error("Trans Begin Error: 当前正处于未完成的事务{$trans_id}中，或该事务未正常结束", 1);
         }
@@ -460,6 +469,10 @@ final class PdoContent
      */
     public function trans(int $trans_id = 1, int $prev = 1): Builder
     {
+        if (isset($this->agent)) {
+            $this->agent->trans();
+            return $this->builder($trans_id);
+        }
         return $this->builder($trans_id)->trans($trans_id, $prev + 1);
     }
 
@@ -470,6 +483,10 @@ final class PdoContent
      */
     public function trans_batch(array $batch_SQLs, int $prev = 1): bool
     {
+        if (isset($this->agent)) {
+            return $this->agent->batch($batch_SQLs);
+        }
+
         $CONN = $this->connect(true, 1);//连接数据库，直接选择主库
 
         foreach ($batch_SQLs as $sql) {

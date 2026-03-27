@@ -85,6 +85,7 @@ final class Mysql
      */
     public function trans(int $trans_id = 1, int $prev = 1): Builder
     {
+        if ($trans_id === -1) $this->useGoAgent = true;
         return $this->MysqlObj($trans_id)->trans($trans_id, $prev + 1);
     }
 

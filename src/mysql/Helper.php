@@ -14,17 +14,7 @@ trait Helper
 {
 
     /**
-     * @param string $table
-     * @return Cache
-     */
-    private function hash(string $table): Cache
-    {
-        return $this->pool->cache($this->dbName)->table($table);
-    }
-
-
-    /**
-     * select * from INFORMATION_SCHEMA.Columns where table_name='tabAdmin' and table_schema='dbPayCenter';
+     * select * from INFORMATION_SCHEMA .Columns where table_name='tabAdmin' and table_schema='dbPayCenter';
      * 当前模型表对应的主键字段名，即自增字段
      * @param string|null $table
      * @return string
@@ -35,10 +25,12 @@ trait Helper
         if (is_null($table)) $table = $this->_table;
         if (!$table) throw new Error('Unable to get table name');
         $mysql = $this->MysqlObj();
-        $val = $mysql->table('INFORMATION_SCHEMA.Columns')
+        $obj = $mysql->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME')
-            ->where(['table_name' => $table, 'EXTRA' => 'auto_increment'])
-            ->get(0, 3)->row();
+            ->where(['table_name' => $table, 'EXTRA' => 'auto_increment', 'TABLE_SCHEMA' => $this->dbName])
+            ->get(0, 3);
+        if (is_array($obj)) return $obj[0]['COLUMN_NAME'];
+        $val = $obj->row();
         if (empty($val)) return '';
         return $val['COLUMN_NAME'];
     }
@@ -87,11 +79,17 @@ trait Helper
         $table = $table ?: $this->_table;
         if (!$table) throw new Error('Unable to get table name');
 
-        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
+        $obj = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
             ->select('column_name as name,COLUMN_DEFAULT as default,column_type as type,column_key as key,column_comment as comment')
             ->where(['table_schema' => $this->dbName, 'table_name' => $table])
             ->order('ORDINAL_POSITION', 'asc')
-            ->get(0, 3)->rows();
+            ->get(0, 3);
+        if (is_array($obj)) {
+            $val = $obj;
+        } else {
+            $val = $obj->rows();
+        }
+
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         if ($html) {
             $table = [];
@@ -112,9 +110,15 @@ trait Helper
      */
     public function tables(bool $html = false, bool $human = false)
     {
-        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.TABLES')
+        $obj = $this->MysqlObj()->table('INFORMATION_SCHEMA.TABLES')
             ->select("TABLE_NAME as name,DATA_LENGTH as data,INDEX_LENGTH as index,TABLE_ROWS as rows,AUTO_INCREMENT as increment,TABLE_COMMENT as comment,UPDATE_TIME as time")
-            ->where(['TABLE_SCHEMA' => $this->dbName])->get(0, 3)->rows();
+            ->where(['TABLE_SCHEMA' => $this->dbName])->get(0, 3);
+
+        if (is_array($obj)) {
+            $val = $obj;
+        } else {
+            $val = $obj->rows();
+        }
 
         if (empty($val)) return [];
 
@@ -171,9 +175,16 @@ trait Helper
         $table = $table ?: $this->_table;
         if (!$table) throw new Error('Unable to get table name');
 
-        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
+        $obj = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
             ->where(['table_schema' => $this->dbName, 'table_name' => $table])
-            ->get(0, 3)->rows();
+            ->get(0, 3);
+
+        if (is_array($obj)) {
+            $val = $obj;
+        } else {
+            $val = $obj->rows();
+        }
+
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         return $val;
     }
@@ -211,13 +222,20 @@ trait Helper
         foreach ($val as $table) {
             $tab = ucfirst(substr($table['TABLE_NAME'], 3)) . 'Model';
             if (!is_readable("{$root}/{$tab}.php")) {
-                $keyID = $mysql->table('INFORMATION_SCHEMA.Columns')
+                $obj = $mysql->table('INFORMATION_SCHEMA.Columns')
                     ->select('COLUMN_NAME')
                     ->where([
                         'table_schema' => $this->dbName,
                         'table_name' => $table['TABLE_NAME'],
                         'EXTRA' => 'auto_increment'])
                     ->get(0, 3)->row();
+
+                if (is_array($obj)) {
+                    $keyID = $obj[0]['COLUMN_NAME'];
+                } else {
+                    $keyID = $obj->rows();
+                }
+
                 $namespace = str_replace('/', '\\', trim($path, '/'));
                 $php = <<<PHP
 <?php
@@ -248,12 +266,49 @@ PHP;
         $data = $this->hash($table)->get('_title');
         if (!empty($data)) return [];
         if (!$table) throw new Error('Unable to get table name');
-        $val = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
+        $obj = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
             ->select('COLUMN_NAME as field,COLUMN_COMMENT as title')
-            ->where(['table_name' => $table])->get(0, 3)->rows();
+            ->where(['table_name' => $table, 'TABLE_SCHEMA' => $this->dbName])->get(0, 3);
+        if (is_array($obj)) {
+            $val = $obj;
+        } else {
+            $val = $obj->rows();
+        }
+
         if (empty($val)) throw new Error("Table '{$table}' doesn't exist");
         $this->hash($table)->set('_title', $val);
         return $val;
+    }
+
+    public function printTableFields(string $table, string $key = 'data')
+    {
+        if (!$table) exit("未指定表名\n");
+        if (!$key) $key = 'data';
+
+        /**
+         * select COLUMN_NAME,COLUMN_COMMENT from INFORMATION_SCHEMA .Columns
+         * where TABLE_SCHEMA='' and TABLE_NAME=''
+         */
+        $obj = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
+            ->where(['TABLE_SCHEMA' => $this->dbName, 'TABLE_NAME' => $table])->get();
+
+        if (is_array($obj)) {
+            $fields = $obj;
+        } else {
+            $fields = $obj->rows();
+        }
+
+        echo "\n";
+        echo "\${$key} = [];\n";
+        foreach ($fields as $fs) {
+            if ($fs['COLUMN_KEY'] === 'PRI') continue;
+            if ($fs['COLUMN_DEFAULT']) {
+                echo "\${$key}['{$fs['COLUMN_NAME']}'] = '{$fs['COLUMN_DEFAULT']}';//{$fs['COLUMN_COMMENT']}\n";
+            } else {
+                echo "\${$key}['{$fs['COLUMN_NAME']}'] = 000000;//{$fs['COLUMN_COMMENT']}\n";
+            }
+        }
+        echo "\n";
     }
 
     /**
@@ -323,27 +378,12 @@ PHP;
         }
     }
 
-    public function printTableFields(string $table, string $key = 'data')
+    /**
+     * @param string $table
+     * @return Cache
+     */
+    private function hash(string $table): Cache
     {
-        if (!$table) exit("未指定表名\n");
-        if (!$key) $key = 'data';
-
-        /**
-         * select COLUMN_NAME,COLUMN_COMMENT from INFORMATION_SCHEMA.Columns
-         * where TABLE_SCHEMA='' and TABLE_NAME=''
-         */
-        $fields = $this->MysqlObj()->table('INFORMATION_SCHEMA.Columns')
-            ->where(['TABLE_SCHEMA' => $this->dbName, 'TABLE_NAME' => $table])->get()->rows();
-        echo "\n";
-        echo "\${$key} = [];\n";
-        foreach ($fields as $fs) {
-            if ($fs['COLUMN_KEY'] === 'PRI') continue;
-            if ($fs['COLUMN_DEFAULT']) {
-                echo "\${$key}['{$fs['COLUMN_NAME']}'] = '{$fs['COLUMN_DEFAULT']}';//{$fs['COLUMN_COMMENT']}\n";
-            } else {
-                echo "\${$key}['{$fs['COLUMN_NAME']}'] = 000000;//{$fs['COLUMN_COMMENT']}\n";
-            }
-        }
-        echo "\n";
+        return $this->pool->cache($this->dbName)->table($table);
     }
 }
