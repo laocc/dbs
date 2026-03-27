@@ -607,6 +607,7 @@ final class Mysql
         if ($v = $this->checkRunData('list', $data)) return $v;
 
         if ($this->useGoAgent) {
+            if (empty($data['rows'])) return [];
             if (empty($_decode)) return $data['rows'];
 
             return array_map(function ($rs) use ($_decode) {
