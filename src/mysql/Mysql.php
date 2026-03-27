@@ -425,7 +425,10 @@ final class Mysql
         }
 
         if ($this->useGoAgent) {
-            return $data[0];
+            if (empty($data)) return [];
+            if (empty($data[0])) return [];
+            if (empty($_decode)) return $data[0];
+            return $this->decode_data($data[0], $_decode);
         }
 
         $val = $data->row($this->columnKey);
@@ -505,7 +508,12 @@ final class Mysql
         if ($v = $this->checkRunData('all', $data)) return $v;
 
         if ($this->useGoAgent) {
-            return $data;
+            if (empty($data)) return [];
+            if (empty($_decode)) return $data;
+
+            return array_map(function ($rs) use ($_decode) {
+                return $this->decode_data($rs, $_decode);
+            }, $data);
         }
 
         return $data->rows(0, $this->columnKey, $_decode);
@@ -599,7 +607,11 @@ final class Mysql
         if ($v = $this->checkRunData('list', $data)) return $v;
 
         if ($this->useGoAgent) {
-            return $data['rows'];
+            if (empty($_decode)) return $data['rows'];
+
+            return array_map(function ($rs) use ($_decode) {
+                return $this->decode_data($rs, $_decode);
+            }, $data['rows']);
         }
 
         return $data->rows(0, null, $_decode);
