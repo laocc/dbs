@@ -135,7 +135,13 @@ class Agent
         $cURL = null;
 
 
-//        print_r([$resp, $errno, $error, $infos, $status]);
+        (!_CLI) and $this->pool->debug([
+            '$cOption' => $cOption,
+//            '$conf' => $this->conf,
+            '$errno' => $errno,
+            '$error' => $error,
+            '$status' => $status
+        ]);
 
         if ($errno !== 0) {
             $error = "curl error($errno):{$error}";
