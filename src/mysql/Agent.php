@@ -37,8 +37,8 @@ class Agent
     public function batch(array $sqls)
     {
         $agent = $this->requestGateway(['trans' => $sqls]);
-
-        return $agent['success'];
+        if ($agent['success']) return true;
+        return $agent['message'];
     }
 
     public function query(string $action, string $sql, array $option)
@@ -88,8 +88,8 @@ class Agent
         ];
 
         (!_CLI) and $this->pool->debug(print_r($runResult, true));
-        if ($agent['success']) return $agent['result'];
 
+        if ($agent['success']) return $agent['result'];
         return $agent['message'];
     }
 
@@ -134,13 +134,17 @@ class Agent
         $status = (int)curl_getinfo($cURL, CURLINFO_HTTP_CODE);
         $cURL = null;
 
+
 //        print_r([$resp, $errno, $error, $infos, $status]);
 
         if ($errno !== 0) {
+            $error = "curl error($errno):{$error}";
+            if ($errno === 7) $error = '_GatewayClosed_';
+
             return [
                 'success' => false,
-                'status' => 0,
-                'message' => "curl error($errno):{$error}",
+                'status' => $errno,
+                'message' => $error,
                 'result' => null,
             ];
         }

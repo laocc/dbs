@@ -107,7 +107,8 @@ final class PdoContent
         $action = strtolower($option['action'] ?? 'select');
 
         if (isset($this->agent)) {
-            return $this->agent->query($action, $sql, $option);
+            $agentValue = $this->agent->query($action, $sql, $option);
+            if ($agentValue !== '_GatewayClosed_') return $agentValue;
         }
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
@@ -227,7 +228,8 @@ final class PdoContent
         $action = strtolower($option['action']);
 
         if (isset($this->agent)) {
-            return $this->agent->query($action, $sql, $option);
+            $agentValue = $this->agent->query($action, $sql, $option);
+            if ($agentValue !== '_GatewayClosed_') return $agentValue;
         }
 
         if (empty($option) or !isset($option['trans_id']) or !isset($option['action']) or !isset($option['param'])) {
@@ -484,7 +486,8 @@ final class PdoContent
     public function trans_batch(array $batch_SQLs, int $prev = 1): bool
     {
         if (isset($this->agent)) {
-            return $this->agent->batch($batch_SQLs);
+            $agentValue = $this->agent->batch($batch_SQLs);
+            if ($agentValue !== '_GatewayClosed_') return $agentValue;
         }
 
         $CONN = $this->connect(true, 1);//连接数据库，直接选择主库
@@ -540,7 +543,10 @@ final class PdoContent
      */
     public function trans_commit(int $trans_id, bool $close = false): bool|string
     {
-        if (isset($this->agent)) return $this->agent->commit();
+        if (isset($this->agent)) {
+            $agentValue = $this->agent->commit();
+            if ($agentValue !== '_GatewayClosed_') return $agentValue;
+        }
 
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
             if (!empty($this->_trans_error)) return $this->_trans_error;
