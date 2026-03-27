@@ -586,7 +586,7 @@ final class Mysql
         $data = $obj->limit($this->pool->paging->size, $skip)->get(0, $this->_traceLevel + 1);
         $_decode = $this->_decode;//中转一下，下面checkRunData里会清空此值
 
-        if ($this->useGoAgent) {
+        if ($this->useGoAgent and is_array($data)) {
             if ($this->_count === 0) $this->pool->paging->recode($data['total'] ?? 0);
 //            if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
         } else {
