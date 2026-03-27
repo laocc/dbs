@@ -129,7 +129,7 @@ abstract class DbModel extends Library
     }
 
     /**
-     * @param int $transID
+     * @param int $transID -1将走代理
      * @return Builder
      * @throws Error
      */

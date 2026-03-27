@@ -46,6 +46,7 @@ final class Mysql
         $this->config = $conf;
         $this->dbName = $conf['db'];
         if ($table) $this->_table = $table;
+        if (defined('_MysqlAgent')) $this->useGoAgent = _MysqlAgent;
     }
 
     /**

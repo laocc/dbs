@@ -540,6 +540,8 @@ final class PdoContent
      */
     public function trans_commit(int $trans_id, bool $close = false): bool|string
     {
+        if (isset($this->agent)) return $this->agent->commit();
+
         if (isset($this->_trans_run[$trans_id]) and $this->_trans_run[$trans_id] === false) {
             if (!empty($this->_trans_error)) return $this->_trans_error;
             return false;
