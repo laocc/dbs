@@ -596,7 +596,7 @@ final class Mysql
 
         if ($this->useGoAgent and is_array($data)) {
             if ($this->_count === 0) $this->pool->paging->recode($data['total'] ?? 0);
-//            if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
+            if (isset($this->sumKey)) $this->pool->paging->sum($data['attach'] ?? []);
         } else {
             if ($this->_count === 0) $this->pool->paging->recode($data->count());
             if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());

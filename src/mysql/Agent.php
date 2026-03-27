@@ -73,14 +73,35 @@ class Agent
 
         }
 
-
         if ($this->inTrans) {
             $this->transSql[] = ['sql' => $sqlAgent, 'args' => $params];
             return true;
         }
-        $payload = ['sql' => $sqlAgent, 'args' => $params, 'count' => $option['count'] ?? false];
+
+        $payload = ['sql' => $sqlAgent, 'args' => $params];
+        if ($option['count'] ?? '') {
+            $payload['count'] = $option['count'];
+        }
+
+        if ($option['_count_sql'] ?? '') {
+            $attach = [];
+            $sqlAttach = $option['_count_sql'];
+            preg_match_all('/(:\w+)/', $option['_count_sql'], $pmt);
+
+            foreach ($pmt[0] as $key) {
+                $sqlAttach = str_replace($key, '?', $sqlAttach);
+                $attach[] = $option['param'][$key];
+            }
+            $payload['attach'] = ['sql' => $sqlAttach, 'args' => $attach];
+        }
+
+//        print_r($payload);
 
         $agent = $this->requestGateway($payload);
+        if (isset($agent['result']['attach']) and isset($agent['result']['attach'][0])) {
+            $agent['result']['attach'] = $agent['result']['attach'][0];
+        }
+//        print_r($agent);
 
         $runResult += [
             'finish' => $time_b = microtime(true),
@@ -90,6 +111,8 @@ class Agent
         (!_CLI) and $this->pool->debug(print_r($runResult, true));
 
         if ($agent['success']) return $agent['result'];
+
+
         return $agent['message'];
     }
 
@@ -135,13 +158,7 @@ class Agent
         $cURL = null;
 
 
-        (!_CLI) and $this->pool->debug([
-            '$cOption' => $cOption,
-//            '$conf' => $this->conf,
-            '$errno' => $errno,
-            '$error' => $error,
-            '$status' => $status
-        ]);
+//        print_r([$resp, $errno, $error, $infos, $status]);
 
         if ($errno !== 0) {
             $error = "curl error($errno):{$error}";

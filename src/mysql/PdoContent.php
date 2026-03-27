@@ -308,44 +308,6 @@ final class PdoContent
         ];
 
 
-        if ($this->_CONF['agent'] ?? 0) {
-            $params = [];
-            $sqlAgent = $sql;
-            preg_match_all('/(:\w+)/', $sql, $pma);
-            if ($action === 'insert') {
-                foreach ($option['param'] as $val) {
-                    $line = [];
-                    foreach ($pma[0] as $key) {
-                        $line[] = $val[$key];
-                    }
-                    $params[] = $line;
-                }
-
-                foreach ($pma[0] as $key) {
-                    $sqlAgent = str_replace($key, '?', $sqlAgent);
-                }
-            } else {
-
-                foreach ($pma[0] as $key) {
-                    $sqlAgent = str_replace($key, '?', $sqlAgent);
-                    $params[] = $option['param'][$key];
-                }
-
-            }
-
-            $payload = ['sql' => $sqlAgent, 'args' => $params, 'count' => $option['count'] ?? false];
-            $agent = $this->requestGateway($payload);
-
-            $runResult += [
-                'finish' => $time_b = microtime(true),
-                'runTime' => ($time_b - $runResult['ready']) * 1000,
-            ];
-            (!_CLI) and $this->pool->debug(print_r($runResult, true), $traceLevel + 1);
-
-            if ($agent['success']) return $agent['result'];
-
-        }
-
         $result = $this->{$action}($CONN, $sql, $option, $error, $traceLevel + 1);//执行
 
 //        print_r(['$result' => $result, 'act' => $action, '$option' => $option, '$sql' => $sql, '$error' => $error]);
@@ -783,64 +745,6 @@ final class PdoContent
         return $attr;
     }
 
-    private function requestGateway(array $payload): array
-    {
-        $baseUrl = $this->_CONF['go_http'] ?? '';//'http://127.0.0.1:8080/v1';
-        $unixSocket = $this->_CONF['go_unix'] ?? '';
-        $apiKey = $this->_CONF['go_secret'] ?? '';
-
-        $headers = ['Content-Type: application/json'];
-        if ($apiKey !== '') {
-            $headers[] = 'X-API-Key: ' . $apiKey;
-        }
-
-        if (!isset($payload['sql'])) {
-            if (isset($payload[1])) {
-                $payload = ['trans' => $payload];
-            }
-        }
-
-        $cOption = [
-            CURLOPT_URL => $baseUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
-        ];
-
-        if ($unixSocket !== '') {
-            $cOption[CURLOPT_UNIX_SOCKET_PATH] = $unixSocket;
-        }
-
-        $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
-        curl_setopt_array($cURL, $cOption);
-
-        $resp = curl_exec($cURL);
-        $errno = curl_errno($cURL);
-        $error = curl_error($cURL);
-//        $infos = curl_getinfo($cURL);
-        $status = (int)curl_getinfo($cURL, CURLINFO_HTTP_CODE);
-        $cURL = null;
-
-//        print_r([$resp, $errno, $error, $infos, $status]);
-
-        if ($errno !== 0) {
-            return [
-                'success' => false,
-                'status' => 0,
-                'message' => "curl error($errno):{$error}",
-                'result' => null,
-            ];
-        }
-
-        return [
-            'success' => $status >= 200 && $status < 300,
-            'status' => $status,
-            'message' => 'ok',
-            'result' => json_decode((string)$resp, true),
-        ];
-    }
 
     /**
      * @param PDO $CONN
