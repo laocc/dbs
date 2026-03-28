@@ -52,7 +52,7 @@ class Agent
         $params = [];
         $sqlAgent = $sql;
         preg_match_all('/(:\w+)/', $sql, $pma);
-        if ($action === 'insert') {
+        if ($action === 'insert' or $action === 'replace') {
             foreach ($option['param'] as $val) {
                 $line = [];
                 foreach ($pma[0] as $key) {
@@ -110,7 +110,12 @@ class Agent
 
         (!_CLI) and $this->pool->debug(print_r($runResult, true));
 
-        if ($agent['success']) return $agent['result'];
+        if ($agent['success']) {
+            if ($action === 'insert' or $action === 'replace') {
+                return $agent['result']['lastID'];
+            }
+            return $agent['result'];
+        }
 
 
         return $agent['message'];
