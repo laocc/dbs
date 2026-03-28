@@ -107,7 +107,10 @@ class Agent
         //   ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze', 'call'])) {
         //   ['select', '', '', , 'alter', 'analyze', 'call'])) {
 
-        (!_CLI) and $this->pool->debug(print_r($runResult, true));
+        if(!_CLI)  {
+            $this->pool->debug(print_r($runResult, true));
+            $this->pool->debug($agent);
+        }
 
         if ($agent['success']) {
             if ($action === 'insert' or $action === 'replace') {

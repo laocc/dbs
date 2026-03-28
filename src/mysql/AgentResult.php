@@ -48,7 +48,7 @@ class AgentResult
     {
         if (empty($this->result)) return [];
         $data = $this->result[0];
-        if (empty($data)) return null;
+        if (empty($data)) return [];
         if (empty($decode)) return $data;
         return $this->decode($data, $decode);
     }
