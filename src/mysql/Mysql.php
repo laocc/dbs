@@ -129,6 +129,10 @@ final class Mysql
         $this->forceIndex = [];
         $this->tableJoin = [];
         $this->selectKey = [];
+
+        $this->useGoAgent = false;
+        if (defined('_MysqlAgent')) $this->useGoAgent = _MysqlAgent;
+
     }
 
     /**
