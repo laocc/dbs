@@ -20,9 +20,10 @@ class AgentResult
         if (!$this->success) return;
         if (empty($data['result']['rows'])) $data['result']['rows'] = [];
 
-        $this->result = $data['result']['rows'];
         $this->sql = $sql;
-        $this->count = count($data['result']['rows']);
+        $this->result = $data['result']['rows'];
+        $this->count = $data['result']['total'];
+//        $this->count = count($data['result']['rows']);
         $this->sum = [];
         if (isset($data['result']['attach'])) {
             if (isset($data['result']['attach']['rows'])) {

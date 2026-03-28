@@ -90,9 +90,7 @@ class Agent
         }
 
         $payload = ['sql' => $sqlAgent, 'args' => $params];
-        if ($option['count'] ?? '') {
-            $payload['count'] = $option['count'];
-        }
+        if ($option['count'] ?? 0) $payload['count'] = true;
 
         if ($option['_count_sql'] ?? '') {
             $attach = [];
