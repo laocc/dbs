@@ -46,6 +46,7 @@ class AgentResult
      */
     public function row($col = null, array $decode = [])
     {
+        if (empty($this->result)) return [];
         $data = $this->result[0];
         if (empty($data)) return null;
         if (empty($decode)) return $data;
@@ -67,8 +68,8 @@ class AgentResult
      */
     public function rows(int $row = 0, int $col = null, array $decode = [])
     {
-        $data = $this->result[0];
-        if (empty($data)) return [];
+        if (empty($this->result)) return [];
+        $data = $this->result;
         if (empty($decode)) return $data;
 
         return array_map(function ($rs) use ($decode) {
