@@ -41,12 +41,21 @@ class Agent
         return $agent['message'];
     }
 
+    /**
+     * @param string $action
+     * @param string $sql
+     * @param array $option
+     * @return AgentResult|int|mixed|true
+     *
+     * ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze', 'call']
+     *
+     */
     public function query(string $action, string $sql, array $option)
     {
         $runResult = [
             'trans' => $this->inTrans,
             'sql' => $sql,
-            'param' => json_encode($option['param'], 256 | 64),
+            'option' => json_encode($option, 256 | 64),
             'ready' => microtime(true),
         ];
 
@@ -74,8 +83,9 @@ class Agent
 
         }
 
-        if ($this->inTrans) {
+        if ($this->inTrans and ($action !== 'select')) {
             $this->transSql[] = ['sql' => $sqlAgent, 'args' => $params];
+//            $this->pool->debug($this->transSql);
             return true;
         }
 
@@ -110,7 +120,7 @@ class Agent
 
         if (!_CLI) {
             $this->pool->debug(print_r($runResult, true));
-            $this->pool->debug($agent);
+//            $this->pool->debug($agent);
         }
 
         if ($agent['success']) {

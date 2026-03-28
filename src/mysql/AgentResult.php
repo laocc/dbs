@@ -25,6 +25,9 @@ class AgentResult
         $this->count = count($data['result']['rows']);
         $this->sum = [];
         if (isset($data['result']['attach'])) {
+            if (isset($data['result']['attach']['rows'])) {
+                $data['result']['attach'] = $data['result']['attach']['rows'];
+            }
             if (isset($data['result']['attach'][0])) {
                 $data['result']['attach'] = $data['result']['attach'][0];
             }
