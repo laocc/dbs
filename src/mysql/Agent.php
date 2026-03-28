@@ -34,9 +34,9 @@ class Agent
         return $agent['message'];
     }
 
-    public function batch(array $sqls)
+    public function batch(array $sql)
     {
-        $agent = $this->requestGateway(['trans' => $sqls]);
+        $agent = $this->requestGateway(['trans' => $sql]);
         if ($agent['success']) return true;
         return $agent['message'];
     }
@@ -98,27 +98,30 @@ class Agent
 //        print_r($payload);
 
         $agent = $this->requestGateway($payload);
-        if (isset($agent['result']['attach']) and isset($agent['result']['attach'][0])) {
-            $agent['result']['attach'] = $agent['result']['attach'][0];
-        }
-//        print_r($agent);
 
         $runResult += [
             'finish' => $time_b = microtime(true),
             'runTime' => ($time_b - $runResult['ready']) * 1000,
         ];
 
+        //   ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze', 'call'])) {
+        //   ['select', '', '', , 'alter', 'analyze', 'call'])) {
+
         (!_CLI) and $this->pool->debug(print_r($runResult, true));
 
         if ($agent['success']) {
             if ($action === 'insert' or $action === 'replace') {
-                return $agent['result']['lastID'];
+                return $agent['result']['lastID'] ?? 0;
             }
-            return $agent['result'];
+            if ($action === 'update' or $action === 'delete') {
+                return $agent['result']['affected'] ?? 0;
+            }
+        } else {
+            if ($action === 'insert' or $action === 'replace') return 0;
+            if ($action === 'update' or $action === 'delete') return 0;
         }
 
-
-        return $agent['message'];
+        return new AgentResult($agent, [], $sqlAgent);
     }
 
 

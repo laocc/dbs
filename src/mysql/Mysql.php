@@ -20,7 +20,7 @@ final class Mysql
     protected array $forceIndex = [];
     protected array $selectKey = [];
     protected string $groupKey;
-    protected $columnKey;//库名
+    protected $columnKey;
     private Pool $pool;//表名，创建对象时，或明确指定当前模型的对应表名
     private Cache $Cache;       //事务
     private array $config;
@@ -424,13 +424,6 @@ final class Mysql
             return $ck;
         }
 
-        if ($this->useGoAgent) {
-            if (empty($data)) return [];
-            if (empty($data[0])) return [];
-            if (empty($_decode)) return $data[0];
-            return $this->decode_data($data[0], $_decode);
-        }
-
         $val = $data->row($this->columnKey);
         if ($val === false or $val === null) {
             $this->_cache = 0;
@@ -506,15 +499,6 @@ final class Mysql
         $data = $obj->skip($skip)->get($limit, $this->_traceLevel + 1);
         $_decode = $this->_decode;
         if ($v = $this->checkRunData('all', $data)) return $v;
-
-        if ($this->useGoAgent) {
-            if (empty($data)) return [];
-            if (empty($_decode)) return $data;
-
-            return array_map(function ($rs) use ($_decode) {
-                return $this->decode_data($rs, $_decode);
-            }, $data);
-        }
 
         return $data->rows(0, $this->columnKey, $_decode);
     }
@@ -594,26 +578,12 @@ final class Mysql
         $data = $obj->limit($this->pool->paging->size, $skip)->get(0, $this->_traceLevel + 1);
         $_decode = $this->_decode;//中转一下，下面checkRunData里会清空此值
 
-        if ($this->useGoAgent and is_array($data)) {
-            if ($this->_count === 0) $this->pool->paging->recode($data['total'] ?? 0);
-            if (isset($this->sumKey)) $this->pool->paging->sum($data['attach'] ?? []);
-        } else {
-            if ($this->_count === 0) $this->pool->paging->recode($data->count());
-            if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
-        }
+        if ($this->_count === 0) $this->pool->paging->recode($data->count());
+        if (isset($this->sumKey)) $this->pool->paging->sum($data->sum());
 
         $this->pool->paging->calculate(0);
 
         if ($v = $this->checkRunData('list', $data)) return $v;
-
-        if ($this->useGoAgent) {
-            if (empty($data['rows'])) return [];
-            if (empty($_decode)) return $data['rows'];
-
-            return array_map(function ($rs) use ($_decode) {
-                return $this->decode_data($rs, $_decode);
-            }, $data['rows']);
-        }
 
         return $data->rows(0, null, $_decode);
     }
