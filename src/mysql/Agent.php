@@ -27,8 +27,8 @@ class Agent
     {
         if (!$this->inTrans) return '当前未启动Trans事务';
         $agent = $this->requestGateway(['trans' => $this->transSql]);
-
         if (!_CLI) $this->pool->debug($this->transSql);
+        $this->inTrans = false;
 
         if ($agent['success']) return true;
         return $agent['message'];
@@ -44,6 +44,7 @@ class Agent
     public function query(string $action, string $sql, array $option)
     {
         $runResult = [
+            'trans' => $this->inTrans,
             'sql' => $sql,
             'param' => json_encode($option['param'], 256 | 64),
             'ready' => microtime(true),
@@ -107,7 +108,7 @@ class Agent
         //   ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze', 'call'])) {
         //   ['select', '', '', , 'alter', 'analyze', 'call'])) {
 
-        if(!_CLI)  {
+        if (!_CLI) {
             $this->pool->debug(print_r($runResult, true));
             $this->pool->debug($agent);
         }
