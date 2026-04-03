@@ -193,7 +193,7 @@ class Agent
 
         $result = json_decode((string)$resp, true);
         $success = ($status >= 200 && $status < 300);
-        if ($success) $success = $result['success'];
+        if ($success) $success = $result['success'] ?? 1;
         $version = $result['version'] ?? '';
         $message = $result['message'] ?? '';
         unset($result['success']);
