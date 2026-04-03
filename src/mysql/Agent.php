@@ -130,8 +130,12 @@ class Agent
                 return $agent['result']['affected'] ?? 0;
             }
         } else {
-            if ($action === 'insert' or $action === 'replace') return 0;
-            if ($action === 'update' or $action === 'delete') return 0;
+            if ($action === 'insert' or $action === 'replace') {
+                return $agent['message'];
+            }
+            if ($action === 'update' or $action === 'delete') {
+                return $agent['message'];
+            }
         }
 
         return new AgentResult($agent, [], $sqlAgent);
