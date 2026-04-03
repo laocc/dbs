@@ -55,7 +55,7 @@ class Agent
         $runResult = [
             'trans' => $this->inTrans,
             'sql' => $sql,
-            'option' => json_encode($option, 256 | 64),
+            'option' => $option,
             'ready' => microtime(true),
         ];
 
