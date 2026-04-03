@@ -14,6 +14,8 @@ use esp\dbs\yac\Yac;
 use esp\dbs\library\Paging;
 use esp\error\Error;
 use function esp\core\esp_error;
+use esp\dbs\mysql\AgentMysql;
+use esp\dbs\mysql\AgentBuild;
 
 /**
  * 非esp框架，可以自行实现此类，不需要扩展自esp\core\Library
@@ -181,12 +183,20 @@ abstract class DbModel extends Library
 
     /**
      * @param string $table
-     * @return Mysql
+     * @param bool $agent
+     * @return Mysql|AgentMysql
      * @throws Error
      */
-    final public function table(string $table = ''): Mysql
+    final public function table(string $table = '', bool $agent = false): Mysql|AgentMysql
     {
+        if ($agent) return new AgentMysql($this->_controller->_pool);
         return $this->_controller->_pool->mysql($table);
+    }
+
+    final public function agent(string $table): AgentBuild
+    {
+        $agent = new AgentMysql($this->_controller->_pool);
+        return new AgentBuild($table, $agent, $this->_controller->_pool);
     }
 
     /**

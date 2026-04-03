@@ -3,42 +3,22 @@
 namespace esp\dbs\mysql;
 
 use esp\dbs\Pool;
+use esp\dbs\library\Paging;
+use esp\error\Error;
 
-class Agent
+class AgentMysql
 {
     private Pool $pool;
-    private array $conf;
-    private bool $inTrans = false;
-    private array $transSql = [];
 
-    public function __construct(array $conf, Pool $pool)
+
+    public function __construct(Pool $pool)
     {
-        $this->conf = $conf;
         $this->pool = &$pool;
     }
 
-
-    public function trans()
+    public function table(string $table): AgentBuild
     {
-        $this->inTrans = true;
-    }
-
-    public function commit()
-    {
-        if (!$this->inTrans) return '当前未启动Trans事务';
-        $agent = $this->requestGateway(['trans' => $this->transSql]);
-        if (!_CLI) $this->pool->debug($this->transSql);
-        $this->inTrans = false;
-
-        if ($agent['success']) return true;
-        return $agent['message'];
-    }
-
-    public function batch(array $sql)
-    {
-        $agent = $this->requestGateway(['trans' => $sql]);
-        if ($agent['success']) return true;
-        return $agent['message'];
+        return new AgentBuild($table, $this, $this->pool);
     }
 
     /**

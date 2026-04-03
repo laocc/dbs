@@ -971,6 +971,10 @@ final class Mysql
 
         if (isset($decode['point'])) {
             foreach ($decode['point'] as $k) {
+                if (!isset($data[$k[1]])) {
+                    $data[$k[0]] = ['longitude' => 0, 'latitude' => 0];
+                    continue;
+                }
                 preg_match('/POINT\((-?[\d\.]+)\s(-?[\d\.]+)\)/i', $data[$k[1]], $locMch);
                 $data[$k[0]] = [
                     'longitude' => floatval($locMch[1] ?? 0),
