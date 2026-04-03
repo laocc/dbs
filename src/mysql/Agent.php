@@ -111,6 +111,8 @@ class Agent
         $runResult += [
             'finish' => $time_b = microtime(true),
             'runTime' => ($time_b - $runResult['ready']) * 1000,
+            'payload' => $payload,
+            'agent' => $agent
         ];
 
         //   ['select', 'insert', 'replace', 'update', 'delete', 'alter', 'analyze', 'call'])) {
@@ -118,7 +120,6 @@ class Agent
 
         if (!_CLI) {
             $this->pool->debug(print_r($runResult, true));
-//            $this->pool->debug($agent);
         }
 
         if ($agent['success']) {
