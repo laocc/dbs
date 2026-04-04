@@ -72,12 +72,15 @@ class Agent
             }
 
             foreach ($pma[0] as $key) {
-                $sqlAgent = str_replace($key, '?', $sqlAgent);
+//                $sqlAgent = str_replace($key, '?', $sqlAgent);
+                $sqlAgent = preg_replace('/(:\w+)/', '?', $sqlAgent);
             }
+
         } else {
 
             foreach ($pma[0] as $key) {
-                $sqlAgent = str_replace($key, '?', $sqlAgent);
+//                $sqlAgent = str_replace($key, '?', $sqlAgent);
+                $sqlAgent = preg_replace('/(:\w+)/', '?', $sqlAgent);
                 $params[] = $option['param'][$key];
             }
 
@@ -98,7 +101,8 @@ class Agent
             preg_match_all('/(:\w+)/', $option['_count_sql'], $pmt);
 
             foreach ($pmt[0] as $key) {
-                $sqlAttach = str_replace($key, '?', $sqlAttach);
+//                $sqlAttach = str_replace($key, '?', $sqlAttach);
+                $sqlAttach = preg_replace('/(:\w+)/', '?', $sqlAttach);
                 $attach[] = $option['param'][$key];
             }
             $payload['attach'] = ['sql' => $sqlAttach, 'args' => $attach];
@@ -170,12 +174,19 @@ class Agent
         $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。
         curl_setopt_array($cURL, $cOption);
 
-        $resp = curl_exec($cURL);
+        $resp = trim(curl_exec($cURL));
         $errno = curl_errno($cURL);
         $error = curl_error($cURL);
 //        $infos = curl_getinfo($cURL);
         $status = (int)curl_getinfo($cURL, CURLINFO_HTTP_CODE);
         $cURL = null;
+
+        $this->pool->debug(print_r([
+            '$resp' => $resp,
+            '$errno' => $errno,
+            '$error' => $error,
+            '$status' => $status
+        ], true));
 
 //        print_r([$resp, $errno, $error, $infos, $status]);
 
