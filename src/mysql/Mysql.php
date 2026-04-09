@@ -930,10 +930,9 @@ final class Mysql
             $conf = $this->config;
             $conf['_agent'] = true;
             if ($this->agentDB) {
-                $db = $this->pool->config["agent.{$this->agentDB}"] ?? null;
+                $db = $this->pool->config['agent'][$this->agentDB] ?? null;
                 if ($db) $conf['_agent'] = $db;
             }
-
             return new PdoContent($tranID, $conf, $this->pool);
         }
 
