@@ -12,10 +12,10 @@ use esp\dbs\redis\RedisHash;
 use esp\dbs\sqlite\Sqlite;
 use esp\dbs\yac\Yac;
 use esp\dbs\library\Paging;
-use esp\error\Error;
-use function esp\core\esp_error;
 use esp\dbs\mysql\AgentMysql;
 use esp\dbs\mysql\AgentBuild;
+use esp\error\Error;
+use function esp\core\esp_error;
 
 /**
  * 非esp框架，可以自行实现此类，不需要扩展自esp\core\Library

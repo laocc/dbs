@@ -143,13 +143,9 @@ class Agent
 
     private function requestGateway(array $payload): array
     {
-        $baseUrl = $this->conf['go_http'] ?? '';//'http://127.0.0.1:8080/v1';
-        $unixSocket = $this->conf['go_unix'] ?? '';
-        $apiKey = $this->conf['go_secret'] ?? '';
-
         $headers = ['Content-Type: application/json'];
-        if ($apiKey !== '') {
-            $headers[] = 'X-API-Key: ' . $apiKey;
+        if ($this->conf['secret'] ?? '') {
+            $headers[] = 'X-API-Key: ' . $this->conf['secret'];
         }
 
         if (!isset($payload['sql'])) {
@@ -159,7 +155,7 @@ class Agent
         }
 
         $cOption = [
-            CURLOPT_URL => $baseUrl,
+            CURLOPT_URL => $this->conf['http'] ?? '',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_HTTPHEADER => $headers,
@@ -167,8 +163,8 @@ class Agent
             CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
         ];
 
-        if ($unixSocket !== '') {
-            $cOption[CURLOPT_UNIX_SOCKET_PATH] = $unixSocket;
+        if ($this->conf['unix'] ?? '') {
+            $cOption[CURLOPT_UNIX_SOCKET_PATH] = $this->conf['unix'];
         }
 
         $cURL = curl_init();   //初始化一个cURL会话，若出错，则退出。

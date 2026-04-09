@@ -47,7 +47,19 @@ final class PdoContent
         $this->transID = $tranID;
         $this->_checkGoneAway = _CLI;
         $this->dbName = $this->_CONF['db'];
-        if ($conf['agent'] ?? 0) $this->agent = new Agent($conf, $pool);
+
+        if ($conf['agent'] ?? 0) {
+            if (is_array($conf['agent'])) {
+                $this->agent = new Agent($conf['agent'], $pool);
+            } else {
+                $agent = [
+                    'http' => $conf['go_http'] ?? '',
+                    'unix' => $conf['go_unix'] ?? '',
+                    'secret' => $conf['go_secret'] ?? '',
+                ];
+                $this->agent = new Agent($agent, $pool);
+            }
+        }
 
         if (isset($this->_CONF['debug_sql'])) {
             $this->_debug_sql = boolval($this->_CONF['debug_sql']);

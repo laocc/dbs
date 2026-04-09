@@ -37,6 +37,7 @@ final class Mysql
     private bool $_distinct = false;
     private string $sumKey;
     private bool $useGoAgent = false;//走go代理
+    private string $agentDB = '';//走go代理
 
     use Helper;
 
@@ -855,9 +856,10 @@ final class Mysql
         return $this;
     }
 
-    public function agent(bool $usAgent = true)
+    public function agent(bool $usAgent = true, string $db = null)
     {
         $this->useGoAgent = $usAgent;
+        if ($usAgent && $db) $this->agentDB = $db;
         return $this;
     }
 
@@ -924,8 +926,18 @@ final class Mysql
     {
         if ($tranID === 1) $tranID = $this->_tranIndex++;
 
+        if ($this->useGoAgent) {
+            $conf = $this->config;
+            $conf['agent'] = true;
+            if ($this->agentDB) {
+                $db = $this->pool->config["agent.{$this->agentDB}"] ?? null;
+                if ($db) $conf['agent'] = $db;
+            }
+
+            return new PdoContent($tranID, $conf, $this->pool);
+        }
+
         if (isset($this->_MysqlPool[$tranID])) return $this->_MysqlPool[$tranID];
-        $this->config['agent'] = $this->useGoAgent;
 
         return $this->_MysqlPool[$tranID] = new PdoContent($tranID, $this->config, $this->pool);
     }

@@ -91,17 +91,22 @@ final class Pool
 
     /**
      * @param string $table
+     * @param bool $new
      * @return Mysql
      * @throws Error
      */
-    public function mysql(string $table): Mysql
+    public function mysql(string $table, bool $new = false): Mysql
     {
-        if (isset($this->_mysql)) return $this->_mysql->setTable($table);
-
         $conf = $this->config['mysql'] ?? null;
         if (is_null($conf)) throw new Error('创建Pool时指定的配置数据中没有(mysql)项');
 
-        return $this->_mysql = (new Mysql($this, $conf, $table));
+        if ($new) {
+            return new Mysql($this, $conf, $table);
+        }
+
+        if (isset($this->_mysql)) return $this->_mysql->setTable($table);
+
+        return $this->_mysql = new Mysql($this, $conf, $table);
     }
 
     /**
