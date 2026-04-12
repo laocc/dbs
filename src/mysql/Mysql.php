@@ -859,6 +859,7 @@ final class Mysql
     public function agent(bool $usAgent = true, string $db = null)
     {
         $this->useGoAgent = $usAgent;
+        $this->agentDB = '';
         if ($usAgent && $db) $this->agentDB = $db;
         return $this;
     }
