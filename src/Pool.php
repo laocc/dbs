@@ -133,7 +133,7 @@ final class Pool
         return $this->_mongodb = new Mongodb($this, $conf, $table);
     }
 
-    public function sqlite(string $file = null): Sqlite
+    public function sqlite(?string $file = null): Sqlite
     {
         if (isset($this->_sqlite)) return $this->_sqlite;
 

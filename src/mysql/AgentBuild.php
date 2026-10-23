@@ -56,7 +56,7 @@ class AgentBuild
         return $this;
     }
 
-    public function paging(int $size, int $index = 0, int $recode = null): AgentBuild
+    public function paging(int $size, int $index = 0, ?int $recode = null): AgentBuild
     {
         if (!isset($this->pool->paging)) {
             $this->pool->paging = new Paging($size, $index, $recode);
@@ -171,7 +171,7 @@ class AgentBuild
      * @return mixed|null
      * @throws Error
      */
-    public function get(array $where, string $orderBy = null, string $sort = 'asc')
+    public function get(array $where, ?string $orderBy = null, string $sort = 'asc')
     {
         $buw = new BuildWhere();
         $whereSql = $buw->where($where);

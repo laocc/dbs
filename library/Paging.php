@@ -22,7 +22,7 @@ final class Paging
     private int $autoSize = 10;
     private bool $isTake = false;
 
-    public function __construct(int $sizeDefault = 0, int $index = 0, int $recode = null)
+    public function __construct(int $sizeDefault = 0, int $index = 0, ?int $recode = null)
     {
         $this->index = intval($_GET[$this->index_key] ?? $index);
         if ($this->index < 1) $this->index = $index ?: 1;
@@ -57,7 +57,7 @@ final class Paging
      * @param array|null $sum
      * @return $this|array
      */
-    public function sum(array $sum = null)
+    public function sum(?array $sum = null)
     {
         if (is_null($sum)) return $this->sum;
         $this->sum = $sum;

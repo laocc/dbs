@@ -72,7 +72,7 @@ final class Builder
      * @param bool|null $_protect
      * @return $this
      */
-    public function table(string $tableName = null, bool $_protect = null): Builder
+    public function table(?string $tableName = null, ?bool $_protect = null): Builder
     {
         $this->clean_builder(false);
         if (is_bool($_protect)) $this->_protect = $_protect;
@@ -242,7 +242,7 @@ final class Builder
      * @param bool $add_identifier 是否自动添加标识符，默认是true，对于复杂查询及带函数的查询请设置为false
      * @return $this
      */
-    public function select(array|string $fields, bool $add_identifier = null): Builder
+    public function select(array|string $fields, ?bool $add_identifier = null): Builder
     {
         if (is_array($fields) and !empty($fields)) {
             foreach ($fields as $field) {
@@ -1077,7 +1077,7 @@ final class Builder
      * @param bool $addProtect
      * @return $this
      */
-    public function order(string $field, string $method = 'ASC', bool $addProtect = null): Builder
+    public function order(string $field, string $method = 'ASC', ?bool $addProtect = null): Builder
     {
         /**
          * 检查传入的排序方式是否被支持
@@ -1638,7 +1638,7 @@ final class Builder
      * @param string|null $AS 如果需要重命名返回字段，这里是新的字段名
      * @return $this
      */
-    private function select_func(string $func, string $select = '*', string $AS = null): Builder
+    private function select_func(string $func, string $select = '*', ?string $AS = null): Builder
     {
         $select = $this->protect_identifier($select);
         $this->_select[] = strtoupper($func) . "({$select})" . ($AS ? " AS `{$AS}`" : '');

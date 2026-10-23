@@ -352,7 +352,7 @@ final class Mysql
      * @param string $sort
      * @return mixed|null
      */
-    public function get($where, string $orderBy = null, string $sort = 'asc')
+    public function get($where, ?string $orderBy = null, string $sort = 'asc')
     {
         $mysql = $this->MysqlObj(0);
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
@@ -467,7 +467,7 @@ final class Mysql
      * @param int $skip
      * @return array
      */
-    public function all(array $where = [], string $orderBy = null, string $sort = 'asc', int $limit = 0, int $skip = 0)
+    public function all(array $where = [], ?string $orderBy = null, string $sort = 'asc', int $limit = 0, int $skip = 0)
     {
         if (!$this->_table) throw new Error('Unable to get table name', $this->_traceLevel + 1);
         $obj = $this->MysqlObj(0)->table($this->_table, $this->_protect)->prepare();
@@ -711,7 +711,7 @@ final class Mysql
      * <0       :size的倍数，为了分页不至于显示0页
      * 0以上    :为指定总数
      */
-    public function do_count(int $count = null): Mysql
+    public function do_count(?int $count = null): Mysql
     {
         if (is_null($count)) {//无参，表示执行统计
             $this->_count = 0;
@@ -751,7 +751,7 @@ final class Mysql
         return $this;
     }
 
-    public function paging(int $size, int $index = 0, int $recode = null): Mysql
+    public function paging(int $size, int $index = 0, ?int $recode = null): Mysql
     {
         if (!isset($this->pool->paging)) {
             $this->pool->paging = new Paging($size, $index, $recode);
@@ -856,7 +856,7 @@ final class Mysql
         return $this;
     }
 
-    public function agent(bool $usAgent = true, string $db = null)
+    public function agent(bool $usAgent = true, ?string $db = null)
     {
         $this->useGoAgent = $usAgent;
         $this->agentDB = '';
@@ -871,7 +871,7 @@ final class Mysql
      * @param bool $addProtect
      * @return $this
      */
-    public function order($key, string $sort = 'asc', bool $addProtect = null): Mysql
+    public function order($key, string $sort = 'asc', ?bool $addProtect = null): Mysql
     {
         if ($sort === '') return $this;
 

@@ -15,7 +15,7 @@ class Memcache implements KeyValue
     private $pool;
     const _TRY = 5;//出错时，尝试次数
 
-    public function __construct(Pool $pool, array $conf = null, $table = null)
+    public function __construct(Pool $pool, ?array $conf = null, $table = null)
     {
         $this->pool = &$pool;
         $conf += ['host' => '127.0.0.1', 'port' => 11211, 'table' => $this->table];
@@ -122,7 +122,7 @@ class Memcache implements KeyValue
      * @param $key
      * @return array|bool
      */
-    public function get(string $key = null)
+    public function get(?string $key = null)
     {
         if ($key === null or $key === '*') return $this->all();
 
@@ -209,9 +209,9 @@ class Memcache implements KeyValue
         if (!is_int($incurably)) throw new Error('DB_MemCache ERROR: incrby只能是整型', 1);
 
         if ($incurably >= 0) {
-            return (boolean)$this->conn->increment($this->table . '.' . $TabKey, $incurably);
+            return (bool)$this->conn->increment($this->table . '.' . $TabKey, $incurably);
         } else {
-            return (boolean)$this->conn->decrement($this->table . '.' . $TabKey, 0 - $incurably);
+            return (bool)$this->conn->decrement($this->table . '.' . $TabKey, 0 - $incurably);
         }
     }
 

@@ -25,7 +25,7 @@ final class Redis implements KeyValue
     /**
      * @throws Error
      */
-    public function __construct(array $conf, int $db = null)
+    public function __construct(array $conf, ?int $db = null)
     {
 //        $this->pool = &$pool;
         $conf += ['host' => '/tmp/redis.sock', 'port' => 0, 'db' => 1];
@@ -96,7 +96,7 @@ final class Redis implements KeyValue
      * @param int|null $db
      * @return Redis
      */
-    public function select(int $db = null): Redis
+    public function select(?int $db = null): Redis
     {
         if (is_null($db)) $db = $this->dbIndex;
         $this->redis->select($db);
@@ -171,7 +171,7 @@ final class Redis implements KeyValue
      * @param int|null $ttl ：=null以config为准，=0不过期，>0指定时间
      * @return bool|\Redis
      */
-    public function set(string $key, $value, int $ttl = null)
+    public function set(string $key, $value, ?int $ttl = null)
     {
         if ($ttl) {
             return $this->redis->setex($key, $ttl, $value);
@@ -181,7 +181,7 @@ final class Redis implements KeyValue
         }
     }
 
-    public function update(string $key, $value, int $ttl = null)
+    public function update(string $key, $value, ?int $ttl = null)
     {
         $val = $this->get($key);
         if (!$val) return false;
@@ -226,7 +226,7 @@ final class Redis implements KeyValue
      * @param int|null $ttl
      * @return bool|int
      */
-    public function expire(string $key, int $ttl = null)
+    public function expire(string $key, ?int $ttl = null)
     {
         if ($ttl === null) {//只是查询过期时间
             return $this->redis->ttl($key);
@@ -246,7 +246,7 @@ final class Redis implements KeyValue
      * @param int|null $ttl
      * @return bool|int
      */
-    public function ttl(string $key, int $ttl = null)
+    public function ttl(string $key, ?int $ttl = null)
     {
         return $this->expire($key, $ttl);
     }
@@ -352,7 +352,7 @@ final class Redis implements KeyValue
      * @param string|null $filter
      * @return array
      */
-    public function keys(string $keys = null, string $filter = null): array
+    public function keys(?string $keys = null, ?string $filter = null): array
     {
         $iterator = null;
         $value = [];
@@ -384,7 +384,7 @@ final class Redis implements KeyValue
      */
     public function del(string ...$keys): bool
     {
-        return (boolean)$this->redis->del($keys);
+        return (bool)$this->redis->del($keys);
     }
 
 

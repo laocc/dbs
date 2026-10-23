@@ -19,7 +19,7 @@ trait Helper
      * @param string|null $table
      * @return string
      */
-    public function PRI(string $table = null): string
+    public function PRI(?string $table = null): string
     {
 //        if (defined('_DISABLE_INFORMATION_SCHEMA') && _DISABLE_INFORMATION_SCHEMA) esp_error('_DISABLE_INFORMATION_SCHEMA', '禁用查询表字段');
         if (is_null($table)) $table = $this->_table;
@@ -170,7 +170,7 @@ trait Helper
      * @param string|null $table
      * @return mixed
      */
-    public function fields(string $table = null)
+    public function fields(?string $table = null)
     {
         $table = $table ?: $this->_table;
         if (!$table) throw new Error('Unable to get table name');

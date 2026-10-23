@@ -134,7 +134,7 @@ final class Result
      * @param array $decode
      * @return array|mixed
      */
-    public function rows(int $row = 0, int $col = null, array $decode = [])
+    public function rows(int $row = 0, ?int $col = null, array $decode = [])
     {
         if ($row === 0) {
             //返回所有行，含数字下标和字段下标

@@ -92,7 +92,7 @@ class Memcached implements KeyValue
      * @param $key
      * @return array
      */
-    public function get(string $key = null, $try = 0)
+    public function get(?string $key = null, $try = 0)
     {
         return $this->server->get($key);
     }
@@ -117,23 +117,24 @@ class Memcached implements KeyValue
      * >0   加
      * <0   减
      * =0   获取值
-     * @param string $TabKey 键名
+     * @param string $key
      * @param int $incurably 可以是正数、负数，或0，=0时为读取值
+     * @param int $ttl
      * @return bool
      */
-    public function counter(string $key = 'count', int $incurably = 1, $ttl = 0): bool
+    public function counter(string $key = 'count', int $incurably = 1, int $ttl = 0): bool
     {
         if ($incurably >= 0) {
-            return (boolean)$this->server->increment($key, $incurably, $ttl);
+            return (bool)$this->server->increment($key, $incurably, $ttl);
         } else {
-            return (boolean)$this->server->decrement($key, 0 - $incurably, $ttl);
+            return (bool)$this->server->decrement($key, 0 - $incurably, $ttl);
         }
     }
 
     /**
      *  关闭
      */
-    public function close()
+    public function close(): void
     {
         $this->server->quit();
     }
@@ -172,7 +173,7 @@ class Memcached implements KeyValue
     /**
      * 请求多个元素
      */
-    public function getDelayed(array $keys, $with_cas = null, callable $value_cb = null)
+    public function getDelayed(array $keys, $with_cas = null, ?callable $value_cb = null)
     {
     }
 
@@ -344,7 +345,7 @@ class Memcached implements KeyValue
     /**
      *从特定的服务器检索元素
      */
-    public function getByKey($server_key, $key, callable $cache_cb = null, &$cas_token = null)
+    public function getByKey($server_key, $key, ?callable $cache_cb = null, &$cas_token = null)
     {
     }
 
@@ -358,7 +359,7 @@ class Memcached implements KeyValue
     /**
      *从指定的服务器上请求多个元素
      */
-    public function getDelayedByKey($server_key, array $keys, $with_cas = null, callable $value_cb = null)
+    public function getDelayedByKey($server_key, array $keys, $with_cas = null, ?callable $value_cb = null)
     {
     }
 

@@ -156,7 +156,7 @@ abstract class DbModel extends Library
      * @param string|null $table
      * @return Mysql
      */
-    final public function Mysql(string $table = null): Mysql
+    final public function Mysql(?string $table = null): Mysql
     {
         if (is_null($table)) {
             if (isset($this->_table)) $table = $this->_table;
@@ -227,7 +227,7 @@ abstract class DbModel extends Library
         return $this->_controller->_pool->mongodb($table);
     }
 
-    final public function sqlite(string $file = null): Sqlite
+    final public function sqlite(?string $file = null): Sqlite
     {
         return $this->_controller->_pool->sqlite($file);
     }

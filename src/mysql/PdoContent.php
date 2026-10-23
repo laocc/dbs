@@ -93,7 +93,7 @@ final class PdoContent
      * @param bool|null $_protect
      * @return Builder
      */
-    public function table(string $tabName, bool $_protect = null): Builder
+    public function table(string $tabName, ?bool $_protect = null): Builder
     {
         $bud = new Builder($this, boolval($this->_CONF['param'] ?? 0), $this->transID);
         return $bud->table($tabName, $_protect);
@@ -116,7 +116,7 @@ final class PdoContent
     /**
      * 直接执行，不进行基本安全检测
      */
-    public function execute(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
+    public function execute(string $sql, array $option = [], ?PDO $CONN = null, int $traceLevel = 0)
     {
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);
@@ -237,7 +237,7 @@ final class PdoContent
      * @param int $traceLevel
      * @return bool|string|int|Result|array
      */
-    public function query(string $sql, array $option = [], PDO $CONN = null, int $traceLevel = 0)
+    public function query(string $sql, array $option = [], ?PDO $CONN = null, int $traceLevel = 0)
     {
         if (empty($sql)) {
             throw new Error("PDO_Error :  SQL语句不能为空", $traceLevel + 1);

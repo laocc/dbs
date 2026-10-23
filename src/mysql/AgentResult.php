@@ -73,7 +73,7 @@ class AgentResult
      * @param array $decode
      * @return array|mixed
      */
-    public function rows(int $row = 0, int $col = null, array $decode = [])
+    public function rows(int $row = 0, ?int $col = null, array $decode = [])
     {
         if (empty($this->result)) return [];
         $data = $this->result;
