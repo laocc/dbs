@@ -24,6 +24,7 @@ final class PdoContent
     private bool $_checkGoneAway = false;
     private int $transID;
     private Agent $agent;
+    private static ?int $_foundRows = null;//FOUND_ROWS属性的键名，各PHP版本不同
 
     /**
      * PdoContent constructor.
@@ -762,6 +763,21 @@ final class PdoContent
         return $attr;
     }
 
+    /**
+     * FOUND_ROWS属性的键名
+     * PHP 8.5起PDO::MYSQL_ATTR_*已改为Pdo\Mysql::ATTR_*，旧常量标记deprecated，PHP 9将移除
+     * @return int
+     */
+    private function foundRows(): int
+    {
+        if (self::$_foundRows === null) {
+            self::$_foundRows = defined('Pdo\Mysql::ATTR_FOUND_ROWS')
+                ? constant('Pdo\Mysql::ATTR_FOUND_ROWS')
+                : PDO::MYSQL_ATTR_FOUND_ROWS;
+        }
+        return self::$_foundRows;
+    }
+
 
     /**
      * @param PDO $CONN
@@ -775,7 +791,7 @@ final class PdoContent
     {
         if (!empty($option['param']) or $option['prepare']) {
             try {
-                $stmt = $CONN->prepare($sql, [PDO::MYSQL_ATTR_FOUND_ROWS => true]);
+                $stmt = $CONN->prepare($sql, [$this->foundRows() => true]);
                 if ($stmt === false) {//预处理时就出错，一般是不应该的，有可能是字段名不对等等
                     $error = $CONN->errorInfo();
                     $stmt = null;
