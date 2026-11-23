@@ -166,7 +166,7 @@ class Memcached implements KeyValue
     /**
      *检索多个元素
      */
-    public function getMulti(array $keys, array &$cas_tokens = null, $flags = null)
+    public function getMulti(array $keys, ?array &$cas_tokens = null, $flags = null)
     {
     }
 
